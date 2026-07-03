@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en" id="top">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Uday Ojha — Software Engineer</title>
+  <meta name="description" content="Software engineer (TypeScript, Go, React, Kubernetes). Designed and shipped a production telemetry platform end-to-end — browser SDK, ClickHouse analytics, zero-touch GitOps delivery.">
+  <meta property="og:title" content="Uday Ojha — Software Engineer">
+  <meta property="og:description" content="I build systems that watch systems. Telemetry SDK → ClickHouse analytics → zero-touch delivery, end to end.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oj-uday.github.io/">
+  <meta property="og:image" content="https://github.com/OJ-Uday.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230a0e13'/%3E%3Ccircle cx='16' cy='16' r='5' fill='%234be3b0'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%234be3b0' stroke-opacity='.45' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Uday Ojha",
+    "jobTitle": "Software Engineer",
+    "url": "https://oj-uday.github.io/",
+    "sameAs": ["https://github.com/OJ-Uday", "https://www.linkedin.com/in/uday-o/"]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <a class="brand" href="#top" data-evt="nav.brand"><span class="dot" aria-hidden="true"></span>uday.ojha</a>
+    <nav aria-label="Sections">
+      <a href="#systems" data-evt="nav.systems">Systems</a>
+      <a href="#projects" data-evt="nav.projects">Projects</a>
+      <a href="#experience" data-evt="nav.experience">Experience</a>
+      <a href="#writing" data-evt="nav.writing">Writing</a>
+      <a href="#contact" data-evt="nav.contact">Contact</a>
+    </nav>
+    <a class="btn small" href="resume.pdf" data-evt="resume.download">Résumé</a>
+  </header>
+
+  <main id="main">
+    <!-- ───────────────────────── hero ───────────────────────── -->
+    <section class="hero" id="hero">
+      <div class="hero-copy">
+        <p class="kicker">Uday Ojha · software engineer · Chandigarh, IN</p>
+        <h1>I build systems<br>that watch systems.</h1>
+        <p class="lede">
+          TypeScript, Go, React — and the pipelines between them. Most recently I
+          designed and shipped a production <strong>telemetry platform end-to-end</strong>
+          inside a Fortune-500: browser SDK → ClickHouse analytics → a deploy
+          pipeline that ships with zero human clicks.
+        </p>
+        <div class="cta">
+          <a class="btn" href="#projects" data-evt="cta.projects">View projects</a>
+          <a class="btn ghost" href="resume.pdf" data-evt="cta.resume">Download résumé</a>
+          <a class="btn ghost" href="https://github.com/OJ-Uday" data-evt="cta.github">GitHub</a>
+          <a class="btn ghost" href="https://www.linkedin.com/in/uday-o/" data-evt="cta.linkedin">LinkedIn</a>
+        </div>
+      </div>
+
+      <div class="console" aria-label="Live demo: this page's own telemetry">
+        <div class="console-bar">
+          <span class="pulse" aria-hidden="true"></span>
+          <span class="console-title">live telemetry — this page instruments itself</span>
+          <span class="console-up mono" id="uptime">0s</span>
+        </div>
+        <div class="feed mono" id="feed" role="log" aria-live="off"></div>
+        <div class="console-foot mono">events stay in your browser · nothing is sent anywhere</div>
+      </div>
+    </section>
+
+    <!-- ───────────────────────── stats ───────────────────────── -->
+    <section class="stats" aria-label="Highlights">
+      <div class="stat reveal"><span class="num">&lt; 15 min</span><span class="lbl">deploy lead time — down from ~1 day of manual coordination</span></div>
+      <div class="stat reveal"><span class="num">1,648</span><span class="lbl">production deploys backtested by the release-audit service</span></div>
+      <div class="stat reveal"><span class="num">53%</span><span class="lbl">error-rate regression flagged on the audit service's first live run</span></div>
+      <div class="stat reveal"><span class="num">35 s</span><span class="lbl">CI suite runtime — down from 60+ minutes (React render-loop root cause)</span></div>
+    </section>
+
+    <!-- ───────────────────────── systems ───────────────────────── -->
+    <section id="systems">
+      <h2><span class="mono h-idx">01</span> Systems I've shipped</h2>
+      <div class="cards">
+        <article class="card reveal">
+          <h3>Operational-intelligence platform</h3>
+          <p>
+            Browser SDK → Go + ClickHouse backend → React dashboard, across a federated
+            micro-frontend estate of 5+ applications. Two-tier element identity and
+            capture-time causality feed an inference engine that names the UI
+            automatically — analysts approve with one click, and a new app onboards
+            with <em>two HTML attributes, zero code changes</em>.
+          </p>
+          <div class="chips"><span>TypeScript</span><span>Go</span><span>ClickHouse</span><span>React</span></div>
+        </article>
+        <article class="card reveal">
+          <h3>Release-audit service</h3>
+          <p>
+            A flight recorder for deploys: an append-only ledger of everything that
+            ships, joined against behavior data to diff before vs. after. Backtested
+            across 1,648 deploys and 90 days of events; its first live run caught a
+            same-day API regression at a 53% error rate — with session-level evidence
+            attached.
+          </p>
+          <div class="chips"><span>Go</span><span>ClickHouse</span><span>SQL</span></div>
+        </article>
+        <article class="card reveal">
+          <h3>Zero-touch delivery</h3>
+          <p>
+            Merge to main and walk away: CI-authored image-bump PRs, second-identity
+            approval, auto-merge landing, drift detection, pin-back rollback. The
+            generic implementation is open source below as
+            <a href="https://github.com/OJ-Uday/gitops-autopilot" data-evt="link.gitops">gitops-autopilot</a> —
+            a repo that deploys itself.
+          </p>
+          <div class="chips"><span>GitHub Actions</span><span>Kubernetes</span><span>GitOps</span></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ───────────────────────── projects ───────────────────────── -->
+    <section id="projects">
+      <h2><span class="mono h-idx">02</span> Open source</h2>
+      <div class="cards grid2">
+        <a class="card proj reveal" href="https://github.com/OJ-Uday/telemetry-sdk-patterns" data-evt="proj.sdk">
+          <h3 class="mono">telemetry-sdk-patterns <span class="arrow" aria-hidden="true">↗</span></h3>
+          <p>Zero-dependency browser telemetry SDK: batching queue with retry/beacon drain, micro-frontend event bridge, pluggable auth adapter, delegated auto-capture. 24 tests, live in-page demo.</p>
+          <div class="chips"><span>TypeScript</span><span>CI</span></div>
+        </a>
+        <a class="card proj reveal" href="https://github.com/OJ-Uday/gitops-autopilot" data-evt="proj.gitops">
+          <h3 class="mono">gitops-autopilot <span class="arrow" aria-hidden="true">↗</span></h3>
+          <p>Zero-touch GitOps delivery: bot-authored bump PRs, second-identity approval, auto-merge, deploy ledger, drift check, rollback. Its own merged PRs are the demo.</p>
+          <div class="chips"><span>Bash</span><span>Actions</span><span>Go</span></div>
+        </a>
+        <a class="card proj reveal" href="https://github.com/OJ-Uday/ratelimit" data-evt="proj.ratelimit">
+          <h3 class="mono">ratelimit <span class="arrow" aria-hidden="true">↗</span></h3>
+          <p>Goroutine-safe token-bucket + sliding-window limiters: stdlib-only, zero background goroutines, injectable clocks, net/http middleware. 0 allocs/op on the hot path.</p>
+          <div class="chips"><span>Go</span><span>benchmarks</span></div>
+        </a>
+        <a class="card proj reveal" href="https://github.com/OJ-Uday/react-hooks-kit" data-evt="proj.hooks">
+          <h3 class="mono">react-hooks-kit <span class="arrow" aria-hidden="true">↗</span></h3>
+          <p>Five strictly-typed hooks, each fixing a named footgun: cross-tab storage sync, churn-free listeners, undo/redo with correct history forking, debounced values.</p>
+          <div class="chips"><span>React</span><span>TypeScript</span></div>
+        </a>
+      </div>
+    </section>
+
+    <!-- ───────────────────────── experience ───────────────────────── -->
+    <section id="experience">
+      <h2><span class="mono h-idx">03</span> Experience</h2>
+      <ol class="timeline">
+        <li class="reveal">
+          <div class="t-head"><strong>Software Engineering Intern</strong> · Eli Lilly and Company <span class="t-date mono">Jan 2026 – present</span></div>
+          <p>Built the telemetry platform, release-audit service, and zero-touch delivery pipeline above; 25+ production PRs across SDK, backend, and dashboard in the final two weeks.</p>
+        </li>
+        <li class="reveal">
+          <div class="t-head"><strong>Cybersecurity Intern</strong> · CyberRange <span class="t-date mono">Jul – Nov 2024</span></div>
+          <p>Tested and hardened penetration-testing challenges; reconnaissance, mobile security, vulnerability analysis.</p>
+        </li>
+        <li class="reveal">
+          <div class="t-head"><strong>Cybersecurity Intern</strong> · PGI-Data, Jakarta <span class="t-date mono">May – Jul 2024</span></div>
+          <p>Deployed Wazuh SIEM on production servers; implemented ZTNA, VPN, and privileged-access-management solutions.</p>
+        </li>
+        <li class="reveal">
+          <div class="t-head"><strong>Head of Reverse Engineering</strong> · Cryptonite (MIT Manipal CTF team) <span class="t-date mono">Nov 2022 – present</span></div>
+          <p>Lead the RE division — x86/ARM binary analysis, vulnerability research, international CTFs; author challenges for NiteCTF (.NET + SQLCipher forensics, Z3-solvable PIE binaries, custom AES-XTS in Go).</p>
+        </li>
+      </ol>
+      <p class="edu reveal"><strong>B.Tech, Computer Science</strong> — Manipal Institute of Technology, 2022–2026.</p>
+    </section>
+
+    <!-- ───────────────────────── skills ───────────────────────── -->
+    <section id="skills">
+      <h2><span class="mono h-idx">04</span> Toolbox</h2>
+      <div class="skills reveal">
+        <div class="skill-row"><span class="skill-label mono">languages</span><div class="chips"><span>TypeScript</span><span>JavaScript</span><span>Go</span><span>Python</span><span>Java</span><span>C</span><span>C#</span><span>SQL</span><span>Bash</span></div></div>
+        <div class="skill-row"><span class="skill-label mono">backend</span><div class="chips"><span>Node.js</span><span>REST APIs</span><span>event pipelines</span><span>ClickHouse</span><span>MySQL</span></div></div>
+        <div class="skill-row"><span class="skill-label mono">frontend</span><div class="chips"><span>React</span><span>micro-frontends</span><span>Jest</span><span>Testing Library</span></div></div>
+        <div class="skill-row"><span class="skill-label mono">cloud</span><div class="chips"><span>AWS</span><span>Kubernetes</span><span>Docker</span><span>GitOps / Argo CD</span><span>GitHub Actions</span></div></div>
+        <div class="skill-row"><span class="skill-label mono">security</span><div class="chips"><span>Ghidra</span><span>IDA Pro</span><span>GDB</span><span>x86/ARM asm</span><span>Wazuh</span><span>Burp Suite</span><span>Nmap</span></div></div>
+      </div>
+    </section>
+
+    <!-- ───────────────────────── writing ───────────────────────── -->
+    <section id="writing">
+      <h2><span class="mono h-idx">05</span> Writing</h2>
+      <ul class="writing">
+        <li class="reveal"><a href="https://github.com/OJ-Uday/telemetry-sdk-patterns/blob/main/docs/WHITEPAPER.md" data-evt="write.whitepaper">Self-building instrumentation</a><span> — why telemetry should name the UI itself, and how two-tier identity + capture-time causality make that safe.</span></li>
+        <li class="reveal"><a href="https://github.com/OJ-Uday/gitops-autopilot/blob/main/docs/DESIGN.md" data-evt="write.twoid">The two-identity problem in zero-touch delivery</a><span> — the two GitHub rules that quietly break naive deploy automation, and the arrangements that survive them.</span></li>
+        <li class="reveal"><a href="https://github.com/OJ-Uday/telemetry-sdk-patterns/blob/main/docs/DESIGN-NOTES.md" data-evt="write.notes">Design notes: churn-resistant identity</a><span> — keeping element identity stable while the DOM underneath refuses to be.</span></li>
+      </ul>
+    </section>
+
+    <!-- ───────────────────────── contact ───────────────────────── -->
+    <section id="contact">
+      <h2><span class="mono h-idx">06</span> Contact</h2>
+      <p class="contact-lede reveal">
+        Open to software-engineering roles (2026). The fastest route is email —
+        I read it more reliably than anything else.
+      </p>
+      <div class="cta reveal">
+        <a class="btn" href="mailto:udayojha129@gmail.com" data-evt="contact.email">udayojha129@gmail.com</a>
+        <a class="btn ghost" href="https://github.com/OJ-Uday" data-evt="contact.github">github.com/OJ-Uday</a>
+        <a class="btn ghost" href="https://www.linkedin.com/in/uday-o/" data-evt="contact.linkedin">linkedin.com/in/uday-o</a>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p class="mono">hand-written HTML/CSS/JS · no frameworks, no trackers, no cookies —
+    the only telemetry on this page is the panel up top, and it never leaves your tab.</p>
+    <p class="mono dim">© 2026 Uday Ojha · <a href="https://github.com/OJ-Uday/OJ-Uday.github.io" data-evt="footer.source">view source</a></p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
