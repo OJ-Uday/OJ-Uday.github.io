@@ -1,0 +1,8 @@
+name = "vetlock-scan"
+main = "worker.js"
+compatibility_date = "2024-10-01"
+
+# Free tier: no `workers_dev = false`, no custom domain. Deploys to
+# vetlock-scan.oj-uday.workers.dev (or whatever your workers subdomain is).
+# The secret GH_DISPATCH_TOKEN is set out-of-band with:
+#   wrangler secret put GH_DISPATCH_TOKEN

@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Uday Ojha — Software Engineer</title>
-  <meta name="description" content="Software engineer (TypeScript, Go, React, Kubernetes). Designed and shipped a production telemetry platform end-to-end — browser SDK, ClickHouse analytics, zero-touch GitOps delivery.">
+  <meta name="description" content="Software engineer (TypeScript, Go, React, Kubernetes). I build systems that watch systems — telemetry platforms, deploy audit, and vetlock — a behavioral supply-chain scanner for npm.">
   <meta property="og:title" content="Uday Ojha — Software Engineer">
-  <meta property="og:description" content="I build systems that watch systems. Telemetry SDK → ClickHouse analytics → zero-touch delivery, end to end.">
+  <meta property="og:description" content="I build systems that watch systems. Telemetry SDK → ClickHouse analytics → zero-touch delivery, plus vetlock — behavioral supply-chain scanning for npm.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://oj-uday.github.io/">
   <meta property="og:image" content="https://github.com/OJ-Uday.png">
@@ -31,6 +31,7 @@
   <header class="nav">
     <a class="brand" href="#top" data-evt="nav.brand"><span class="dot" aria-hidden="true"></span>uday.ojha</a>
     <nav aria-label="Sections">
+      <a href="#scan" data-evt="nav.scan">Scan</a>
       <a href="#systems" data-evt="nav.systems">Systems</a>
       <a href="#projects" data-evt="nav.projects">Projects</a>
       <a href="#experience" data-evt="nav.experience">Experience</a>
@@ -45,18 +46,19 @@
     <section class="hero" id="hero">
       <div class="hero-copy">
         <p class="kicker">Uday Ojha · software engineer · Chandigarh, IN</p>
-        <h1>I build systems<br>that watch systems.</h1>
+        <h1>I build systems<br>that watch systems<span class="accent">.</span></h1>
         <p class="lede">
-          TypeScript, Go, React — and the pipelines between them. Most recently I
-          designed and shipped a production <strong>telemetry platform end-to-end</strong>
-          inside a Fortune-500: browser SDK → ClickHouse analytics → a deploy
-          pipeline that ships with zero human clicks.
+          TypeScript, Go, React — and the pipelines between them. Most recently I designed
+          and shipped a production <strong>telemetry platform end-to-end</strong> inside a
+          Fortune-500. On the side I built <strong>vetlock</strong> — a behavioral diff
+          for <code>npm install</code> that catches supply-chain attacks
+          <em>advisory databases can't see</em>.
         </p>
         <div class="cta">
-          <a class="btn" href="#projects" data-evt="cta.projects">View projects</a>
-          <a class="btn ghost" href="resume.pdf" data-evt="cta.resume">Download résumé</a>
+          <a class="btn" href="#scan" data-evt="cta.scan">Scan a lockfile ↓</a>
+          <a class="btn ghost" href="#projects" data-evt="cta.projects">View projects</a>
+          <a class="btn ghost" href="resume.pdf" data-evt="cta.resume">Résumé</a>
           <a class="btn ghost" href="https://github.com/OJ-Uday" data-evt="cta.github">GitHub</a>
-          <a class="btn ghost" href="https://www.linkedin.com/in/uday-o/" data-evt="cta.linkedin">LinkedIn</a>
         </div>
       </div>
 
@@ -64,25 +66,119 @@
         <div class="console-bar">
           <span class="pulse" aria-hidden="true"></span>
           <span class="console-title">live telemetry — this page instruments itself</span>
+          <span class="console-fmt mono" id="fmt-toggle" role="button" tabindex="0"
+                aria-label="toggle event render format">human</span>
           <span class="console-up mono" id="uptime">0s</span>
         </div>
         <div class="feed mono" id="feed" role="log" aria-live="off"></div>
-        <div class="console-foot mono">events stay in your browser · nothing is sent anywhere</div>
+        <div class="console-foot mono">
+          events stay in your browser · press <kbd>?</kbd> for shortcuts
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────────────────── vetlock scanner ───────────────────────── -->
+    <section id="scan" class="scan">
+      <h2><span class="mono h-idx">00</span> Try vetlock — scan a real lockfile
+        <span class="tag mono live" aria-label="live"><span class="tag-dot" aria-hidden="true"></span>live</span>
+      </h2>
+      <p class="scan-lede">
+        Drop a <code>package-lock.json</code> pair (before + after an update), or click
+        <em>Try example</em>. We dispatch a real GitHub Actions workflow that runs vetlock
+        against your lockfiles and posts the findings back — no account, no signup, no cost
+        to you. <a href="https://github.com/OJ-Uday/vetlock" data-evt="scan.readme">How it works ↗</a>
+      </p>
+
+      <div class="scan-wrap">
+        <div class="scan-inputs">
+          <div class="dropzone" id="dz-before" data-slot="before" data-label="before" tabindex="0"
+               role="button" aria-label="Drop package-lock.before.json or click to select">
+            <div class="dz-label mono">package-lock.<span class="accent">before</span>.json</div>
+            <div class="dz-hint">drop file · or click to select</div>
+            <div class="dz-meta mono" hidden></div>
+            <input type="file" accept=".json,application/json" hidden>
+          </div>
+          <div class="dropzone" id="dz-after" data-slot="after" data-label="after" tabindex="0"
+               role="button" aria-label="Drop package-lock.after.json or click to select">
+            <div class="dz-label mono">package-lock.<span class="accent">after</span>.json</div>
+            <div class="dz-hint">drop file · or click to select</div>
+            <div class="dz-meta mono" hidden></div>
+            <input type="file" accept=".json,application/json" hidden>
+          </div>
+        </div>
+
+        <div class="scan-actions">
+          <button class="btn" id="scan-run" data-evt="scan.run" disabled>
+            Run vetlock scan
+          </button>
+          <button class="btn ghost" id="scan-example" data-evt="scan.example">Try malicious (Shai-Hulud fixture)</button>
+          <button class="btn ghost" id="scan-example-benign" data-evt="scan.example.benign">Try benign (debug@4.3.4 → 4.3.5)</button>
+          <button class="btn ghost" id="scan-clear" data-evt="scan.clear" hidden>Clear</button>
+          <button class="btn ghost danger" id="scan-cancel" data-evt="scan.cancel" hidden>Cancel scan</button>
+        </div>
+
+        <div class="scan-progress" id="scan-progress" hidden aria-live="polite">
+          <div class="sp-bar"><div class="sp-fill" id="sp-fill" style="width: 0%"></div></div>
+          <ol class="sp-stages">
+            <li data-stage="submitted"><span class="sp-num">1</span><span class="sp-txt">Submitted</span></li>
+            <li data-stage="dispatched"><span class="sp-num">2</span><span class="sp-txt">Workflow dispatched</span></li>
+            <li data-stage="running"><span class="sp-num">3</span><span class="sp-txt">vetlock running</span></li>
+            <li data-stage="collecting"><span class="sp-num">4</span><span class="sp-txt">Collecting result</span></li>
+            <li data-stage="ready"><span class="sp-num">5</span><span class="sp-txt">Ready</span></li>
+          </ol>
+          <p class="sp-note mono">
+            <span id="sp-elapsed">0s</span> elapsed · typical scan takes 25–45s
+            <span class="sp-msg" id="sp-msg"></span>
+          </p>
+        </div>
+
+        <div class="scan-result" id="scan-result" hidden>
+          <div class="sr-head">
+            <div class="sr-verdict" id="sr-verdict">CLEAN</div>
+            <div class="sr-meta mono" id="sr-meta">0 findings · 0 packages · 0ms</div>
+            <button class="btn small ghost" id="sr-copy" data-evt="scan.copy">Copy JSON</button>
+          </div>
+          <div class="sr-body" id="sr-body"></div>
+          <div class="sr-foot mono">
+            Runs <a href="https://github.com/OJ-Uday/vetlock/releases/tag/v0.3.0" data-evt="scan.version">vetlock v0.3.0</a>
+            on <a href="https://github.com/OJ-Uday/vetlock-web-scans" data-evt="scan.workflow">GitHub Actions</a>.
+            For a full offline scan: <code>npx vetlock diff before.json after.json</code>
+          </div>
+        </div>
+
+        <div class="scan-error" id="scan-error" hidden role="alert">
+          <div class="se-title mono">scan failed</div>
+          <div class="se-msg" id="se-msg"></div>
+          <button class="btn small" id="se-retry" data-evt="scan.retry">Retry</button>
+        </div>
       </div>
     </section>
 
     <!-- ───────────────────────── stats ───────────────────────── -->
     <section class="stats" aria-label="Highlights">
-      <div class="stat reveal"><span class="num">&lt; 15 min</span><span class="lbl">deploy lead time — down from ~1 day of manual coordination</span></div>
+      <div class="stat reveal"><span class="num">12/13</span><span class="lbl">real npm supply-chain attacks caught by vetlock's replay corpus (one honest miss)</span></div>
+      <div class="stat reveal"><span class="num">31</span><span class="lbl">confirmed red-team exploits closed in vetlock v0.3.0 — six-agent adversarial review</span></div>
       <div class="stat reveal"><span class="num">1,648</span><span class="lbl">production deploys backtested by the release-audit service</span></div>
-      <div class="stat reveal"><span class="num">53%</span><span class="lbl">error-rate regression flagged on the audit service's first live run</span></div>
-      <div class="stat reveal"><span class="num">35 s</span><span class="lbl">CI suite runtime — down from 60+ minutes (React render-loop root cause)</span></div>
+      <div class="stat reveal"><span class="num">&lt; 15 min</span><span class="lbl">deploy lead time — down from ~1 day of manual coordination</span></div>
     </section>
 
     <!-- ───────────────────────── systems ───────────────────────── -->
     <section id="systems">
       <h2><span class="mono h-idx">01</span> Systems I've shipped</h2>
       <div class="cards">
+        <article class="card reveal accent-border">
+          <h3>vetlock — supply-chain behavioral diff</h3>
+          <p>
+            Reads two lockfiles, fetches every changed package, safely extracts each
+            tarball, and reports <em>capability deltas</em>: new install scripts, new
+            network endpoints, env-token harvest, obfuscation jumps, integrity tampering.
+            <strong>12 of 13</strong> real npm supply-chain attacks caught by the replay
+            corpus. <strong>31 red-team exploits closed</strong> across a six-agent
+            adversarial review. Ships with a NEVER-EXECUTE canary — the analyzer never
+            runs code from analyzed packages, tested every build.
+          </p>
+          <div class="chips"><span>TypeScript</span><span>Node</span><span>SAST</span><span>CI/CD</span></div>
+        </article>
         <article class="card reveal">
           <h3>Operational-intelligence platform</h3>
           <p>
@@ -123,6 +219,11 @@
     <section id="projects">
       <h2><span class="mono h-idx">02</span> Open source</h2>
       <div class="cards grid2">
+        <a class="card proj reveal accent-border" href="https://github.com/OJ-Uday/vetlock" data-evt="proj.vetlock">
+          <h3 class="mono">vetlock <span class="arrow" aria-hidden="true">↗</span></h3>
+          <p>Behavioral diff for npm dependency updates — what does this update DO now that it didn't before? 17 detectors, HMAC-authed cache, Damerau-Levenshtein typosquat matching, GHSA adjacency, NEVER-EXECUTE invariant. 375 tests, 31 red-team exploits closed. <code>npx vetlock demo</code> tries it in 10 seconds.</p>
+          <div class="chips"><span>TypeScript</span><span>Node</span><span>SAST</span><span>Apache-2.0</span></div>
+        </a>
         <a class="card proj reveal" href="https://github.com/OJ-Uday/telemetry-sdk-patterns" data-evt="proj.sdk">
           <h3 class="mono">telemetry-sdk-patterns <span class="arrow" aria-hidden="true">↗</span></h3>
           <p>Zero-dependency browser telemetry SDK: batching queue with retry/beacon drain, micro-frontend event bridge, pluggable auth adapter, delegated auto-capture. 24 tests, live in-page demo.</p>
@@ -177,8 +278,8 @@
         <div class="skill-row"><span class="skill-label mono">languages</span><div class="chips"><span>TypeScript</span><span>JavaScript</span><span>Go</span><span>Python</span><span>Java</span><span>C</span><span>C#</span><span>SQL</span><span>Bash</span></div></div>
         <div class="skill-row"><span class="skill-label mono">backend</span><div class="chips"><span>Node.js</span><span>REST APIs</span><span>event pipelines</span><span>ClickHouse</span><span>MySQL</span></div></div>
         <div class="skill-row"><span class="skill-label mono">frontend</span><div class="chips"><span>React</span><span>micro-frontends</span><span>Jest</span><span>Testing Library</span></div></div>
-        <div class="skill-row"><span class="skill-label mono">cloud</span><div class="chips"><span>AWS</span><span>Kubernetes</span><span>Docker</span><span>GitOps / Argo CD</span><span>GitHub Actions</span></div></div>
-        <div class="skill-row"><span class="skill-label mono">security</span><div class="chips"><span>Ghidra</span><span>IDA Pro</span><span>GDB</span><span>x86/ARM asm</span><span>Wazuh</span><span>Burp Suite</span><span>Nmap</span></div></div>
+        <div class="skill-row"><span class="skill-label mono">cloud</span><div class="chips"><span>AWS</span><span>Kubernetes</span><span>Docker</span><span>GitOps / Argo CD</span><span>GitHub Actions</span><span>Cloudflare Workers</span></div></div>
+        <div class="skill-row"><span class="skill-label mono">security</span><div class="chips"><span>SAST</span><span>supply chain</span><span>Ghidra</span><span>IDA Pro</span><span>GDB</span><span>x86/ARM asm</span><span>Wazuh</span><span>Burp Suite</span><span>Nmap</span></div></div>
       </div>
     </section>
 
@@ -186,9 +287,10 @@
     <section id="writing">
       <h2><span class="mono h-idx">05</span> Writing</h2>
       <ul class="writing">
+        <li class="reveal"><a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md" data-evt="write.redteam">The vetlock red-team review</a><span> — six adversarial agents, 35 confirmed exploits, adversarial verification with default-REFUTED. 31 closed in v0.3.0.</span></li>
+        <li class="reveal"><a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/SECURITY-DECISIONS.md" data-evt="write.security-decisions">When correctness beats performance</a><span> — the fastest-levenshtein incident, and the principle that governs every security-boundary choice in vetlock.</span></li>
         <li class="reveal"><a href="https://github.com/OJ-Uday/telemetry-sdk-patterns/blob/main/docs/WHITEPAPER.md" data-evt="write.whitepaper">Self-building instrumentation</a><span> — why telemetry should name the UI itself, and how two-tier identity + capture-time causality make that safe.</span></li>
         <li class="reveal"><a href="https://github.com/OJ-Uday/gitops-autopilot/blob/main/docs/DESIGN.md" data-evt="write.twoid">The two-identity problem in zero-touch delivery</a><span> — the two GitHub rules that quietly break naive deploy automation, and the arrangements that survive them.</span></li>
-        <li class="reveal"><a href="https://github.com/OJ-Uday/telemetry-sdk-patterns/blob/main/docs/DESIGN-NOTES.md" data-evt="write.notes">Design notes: churn-resistant identity</a><span> — keeping element identity stable while the DOM underneath refuses to be.</span></li>
       </ul>
     </section>
 
@@ -208,10 +310,31 @@
   </main>
 
   <footer>
-    <p class="mono">hand-written HTML/CSS/JS · no frameworks, no trackers, no cookies —
-    the only telemetry on this page is the panel up top, and it never leaves your tab.</p>
+    <p class="mono">hand-written HTML/CSS/JS · no frameworks, no cookies, no third-party trackers.</p>
+    <p class="mono dim">The lockfile scanner posts your lockfile once to a GitHub Actions workflow I control
+      (<a href="https://github.com/OJ-Uday/vetlock-web-scans" data-evt="footer.workflow">source</a>) and nothing else. The
+      telemetry console up top never leaves this tab.</p>
     <p class="mono dim">© 2026 Uday Ojha · <a href="https://github.com/OJ-Uday/OJ-Uday.github.io" data-evt="footer.source">view source</a></p>
   </footer>
+
+  <!-- ─── keyboard shortcut palette (opens with `?`) ─── -->
+  <dialog class="kbd-help" id="kbd-help">
+    <div class="kh-head">
+      <span class="mono">keyboard shortcuts</span>
+      <button class="kh-close" data-evt="kbd.close" aria-label="Close">✕</button>
+    </div>
+    <table class="kh-body mono">
+      <tr><td><kbd>g</kbd> <kbd>h</kbd></td><td>go home</td></tr>
+      <tr><td><kbd>g</kbd> <kbd>s</kbd></td><td>go to scan</td></tr>
+      <tr><td><kbd>g</kbd> <kbd>p</kbd></td><td>go to projects</td></tr>
+      <tr><td><kbd>g</kbd> <kbd>x</kbd></td><td>go to experience</td></tr>
+      <tr><td><kbd>g</kbd> <kbd>c</kbd></td><td>go to contact</td></tr>
+      <tr><td><kbd>j</kbd> <kbd>k</kbd></td><td>next / previous section</td></tr>
+      <tr><td><kbd>t</kbd></td><td>toggle telemetry render format</td></tr>
+      <tr><td><kbd>?</kbd></td><td>this help</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>close</td></tr>
+    </table>
+  </dialog>
 
   <script src="app.js"></script>
 </body>
