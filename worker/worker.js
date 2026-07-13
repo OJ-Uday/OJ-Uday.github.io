@@ -73,7 +73,7 @@ export default {
       }
       const m = url.pathname.match(/^\/scan\/([a-f0-9]{16,32})$/);
       if (m && request.method === "GET") {
-        return withCors(await handleStatus(m[1]));
+        return withCors(await handleStatus(m[1], env));
       }
       if (url.pathname === "/" || url.pathname === "/health") {
         return withCors(json({ ok: true, service: "vetlock-scan-worker", version: 1 }));
@@ -168,13 +168,21 @@ async function handleScan(request, env, ctx) {
   return json({ scanId, statusUrl: `/scan/${scanId}` }, 202);
 }
 
-async function handleStatus(scanId) {
-  // Poll raw.githubusercontent.com — the workflow commits results/<scanId>.json.
-  // Note: raw.githubusercontent.com has ~5 min CDN cache but honors If-None-Match,
-  // and the file appears fresh on each new commit (URL doesn't change but content
-  // does). To be safe we bust with a cache: 'no-store' on the fetch.
-  const raw = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/results/${scanId}.json`;
-  const res = await fetch(raw, { cache: "no-store" });
+async function handleStatus(scanId, env) {
+  // Poll the GitHub Contents API — the workflow commits results/<scanId>.json.
+  // We use the API rather than raw.githubusercontent.com because raw has a
+  // Fastly-backed CDN cache (~5 min) that can 404-cache a not-yet-committed
+  // file even after the workflow lands. The API is strongly consistent.
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/results/${scanId}.json`;
+  const headers = {
+    Accept: "application/vnd.github.raw",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "vetlock-scan-worker",
+  };
+  if (env?.GH_DISPATCH_TOKEN) {
+    headers.Authorization = `Bearer ${env.GH_DISPATCH_TOKEN}`;
+  }
+  const res = await fetch(apiUrl, { headers });
   if (res.status === 200) {
     const text = await res.text();
     try {
@@ -185,8 +193,7 @@ async function handleStatus(scanId) {
     }
   }
   if (res.status === 404) {
-    // Not committed yet. Stage guess based on how long we've been waiting is
-    // handled on the client (start time known there). We still return a hint.
+    // Not committed yet. Client tracks its own start time and stage guessing.
     return json({ status: "pending", stage: "running" }, 202);
   }
   return json({ status: "upstream-error", code: res.status }, 502);
