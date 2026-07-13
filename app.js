@@ -509,6 +509,8 @@
   }
 
   async function pollUntilReady(scanId) {
+    let transientErrors = 0;
+    const MAX_TRANSIENT = 5;   // 5xx / network blips we tolerate before giving up
     const poll = async () => {
       if (!state.scanning) return;
       const elapsed = performance.now() - state.startedAt;
@@ -528,6 +530,7 @@
           if (j.stage) setStage(j.stage);
           if (j.msg) spMsg.textContent = j.msg;
         } catch {}
+        transientErrors = 0;
         schedulePoll();
         return;
       }
@@ -539,7 +542,15 @@
         renderResult(j.result);
         return;
       }
-      // 4xx/5xx
+      // Transient upstream blips (5xx from CF / GitHub API mid-scan): keep polling
+      // instead of showing a failure banner. The workflow is very likely still
+      // running or the result file is still propagating on GitHub's edge.
+      if (res.status >= 500 && res.status < 600) {
+        transientErrors++;
+        emit("scan.transient", `${res.status} · attempt ${transientErrors}/${MAX_TRANSIENT}`);
+        if (transientErrors < MAX_TRANSIENT) { schedulePoll(); return; }
+      }
+      // Genuine client errors (400/413/415/429) or too many 5xx in a row: give up.
       const text = await safeText(res);
       stopScan("error");
       showError(`Scan failed (HTTP ${res.status}). ${text}`);

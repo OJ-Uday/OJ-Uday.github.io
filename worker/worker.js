@@ -182,7 +182,13 @@ async function handleStatus(scanId, env) {
   if (env?.GH_DISPATCH_TOKEN) {
     headers.Authorization = `Bearer ${env.GH_DISPATCH_TOKEN}`;
   }
-  const res = await fetch(apiUrl, { headers });
+  let res;
+  try {
+    res = await fetch(apiUrl, { headers });
+  } catch (err) {
+    // Network blip talking to GitHub — treat as pending, let the client retry.
+    return json({ status: "pending", stage: "running", note: "upstream-network" }, 202);
+  }
   if (res.status === 200) {
     const text = await res.text();
     try {
@@ -196,7 +202,12 @@ async function handleStatus(scanId, env) {
     // Not committed yet. Client tracks its own start time and stage guessing.
     return json({ status: "pending", stage: "running" }, 202);
   }
-  return json({ status: "upstream-error", code: res.status }, 502);
+  // Any OTHER upstream status (403 secondary-rate-limit, 5xx during a commit,
+  // 502 from GitHub's edge, etc.) is TRANSIENT — the workflow is very likely
+  // still running or the file is still propagating. Report as pending so the
+  // client keeps polling instead of failing. If the workflow really is dead,
+  // the client's 90-second overall timeout will catch it.
+  return json({ status: "pending", stage: "running", note: `upstream-${res.status}` }, 202);
 }
 
 // ─── validation ──────────────────────────────────────────────────────
