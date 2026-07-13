@@ -236,6 +236,45 @@
   const resultEl = $("scan-result");
   const errorEl = $("scan-error");
 
+  // Hard reset — used on initial pageload AND on bfcache restore (browser back/forward
+  // that resurrects the whole tab including live JS variables). Without this, closing
+  // the tab mid-scan and reopening leaves a phantom "scan failed" banner glued to the
+  // UI with a live poll timer that keeps firing showError() the moment you click Clear.
+  function hardResetScanner() {
+    // Kill any in-flight scan machinery — synchronous, not the delayed stopScan version.
+    state.scanning = false;
+    clearTimeout(state.pollTimer);
+    clearInterval(state.elapsedTimer);
+    if (state.aborter) { try { state.aborter.abort(); } catch {} state.aborter = null; }
+    state.pollTimer = 0;
+    state.elapsedTimer = 0;
+    state.scanId = null;
+    state.startedAt = 0;
+
+    // Clear file state.
+    state.files.before = null;
+    state.files.after = null;
+    state.corpusId = null;
+
+    // Reset every visible UI slot.
+    for (const dz of [dzBefore, dzAfter]) {
+      if (!dz) continue;
+      dz.classList.remove("filled", "error", "dragging");
+      const meta = dz.querySelector(".dz-meta");
+      if (meta) { meta.hidden = true; meta.textContent = ""; meta.classList.remove("warn"); }
+      const inp = dz.querySelector("input[type=file]");
+      if (inp) inp.value = "";
+    }
+    if (errorEl)    errorEl.hidden = true;
+    if (resultEl)   resultEl.hidden = true;
+    if (progressEl) progressEl.hidden = true;
+    if (cancelBtn)  cancelBtn.hidden = true;
+    if (clearBtn)   clearBtn.hidden = true;
+    const seMsg = document.getElementById("se-msg");
+    if (seMsg) seMsg.textContent = "";
+    if (runBtn) runBtn.disabled = true;
+  }
+
   // Attach dropzone handlers
   function wireDropzone(dz) {
     if (!dz) return;
@@ -425,19 +464,7 @@
     emit("scan.example.corpus", id);
   }
   clearBtn?.addEventListener("click", () => {
-    state.files.before = state.files.after = null;
-    state.corpusId = null;
-    clearScanUi();
-    for (const dz of [dzBefore, dzAfter]) {
-      dz.classList.remove("filled", "error");
-      const meta = dz.querySelector(".dz-meta");
-      if (meta) { meta.hidden = true; meta.textContent = ""; }
-      const inp = dz.querySelector("input[type=file]");
-      if (inp) inp.value = "";
-    }
-    resultEl.hidden = true;
-    errorEl.hidden = true;
-    updateRunEnabled();
+    hardResetScanner();
     emit("scan.clear", "");
   });
 
@@ -727,6 +754,19 @@
       }
     };
   }
+
+  // Initial state — everything hidden, no files, no zombies.
+  hardResetScanner();
+
+  // If the user closes the tab mid-scan and comes back via browser back/forward,
+  // Chrome/Safari's bfcache restores the whole JS environment — including any
+  // running poll timer + persisted error banner. Force a clean scanner on restore.
+  addEventListener("pageshow", (e) => {
+    if (e.persisted) {
+      hardResetScanner();
+      emit("scan.restored", "bfcache — scanner reset");
+    }
+  });
 
   emit("scan.ready", "drop a lockfile pair or click try example");
 })();
