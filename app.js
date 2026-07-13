@@ -279,6 +279,7 @@
     }
     state.files[slot] = { name: file.name, size: file.size, text };
     state.corpusId = null;  // real file drop overrides any prior corpus selection
+    clearScanUi();
     dz.classList.remove("error");
     dz.classList.add("filled");
     const meta = dz.querySelector(".dz-meta");
@@ -388,6 +389,7 @@
     const ex = EXAMPLES[kind];
     if (!ex) return;
     state.corpusId = null;
+    clearScanUi();
     const beforeText = JSON.stringify(ex.before, null, 2);
     const afterText = JSON.stringify(ex.after, null, 2);
     state.files.before = { name: `example-${kind}.before.json`, size: beforeText.length, text: beforeText };
@@ -410,6 +412,7 @@
   // depending on hijack tarballs still being live on npm (most are unpublished).
   function loadCorpusExample(id) {
     state.corpusId = id;
+    clearScanUi();
     state.files.before = { name: `corpus/${id}/lockfile.before.json`, size: 0, text: "" };
     state.files.after  = { name: `corpus/${id}/lockfile.after.json`,  size: 0, text: "" };
     for (const [slot, dz] of [["before", dzBefore], ["after", dzAfter]]) {
@@ -424,6 +427,7 @@
   clearBtn?.addEventListener("click", () => {
     state.files.before = state.files.after = null;
     state.corpusId = null;
+    clearScanUi();
     for (const dz of [dzBefore, dzAfter]) {
       dz.classList.remove("filled", "error");
       const meta = dz.querySelector(".dz-meta");
@@ -438,8 +442,22 @@
   });
 
   // ── Run scan ─────────────────────────────────────────────────────────
+  // Small helper: drop any stale scan UI (previous error banner, previous
+  // result, previous progress bar) so a new scan starts on a clean slate.
+  // Called by every user action that means "I want a fresh scan": Run,
+  // Try example, Try benign, drop a file, Clear, Retry.
+  function clearScanUi() {
+    errorEl.hidden = true;
+    resultEl.hidden = true;
+    const seMsg = document.getElementById("se-msg");
+    if (seMsg) seMsg.textContent = "";
+    // If a scan was mid-flight, tear it down cleanly.
+    if (state.scanning) stopScan("reset");
+  }
+
   runBtn?.addEventListener("click", async () => {
     if (state.scanning || !state.files.before || !state.files.after) return;
+    clearScanUi();
     startScan();
   });
 
@@ -587,7 +605,7 @@
     document.getElementById("se-msg").textContent = msg;
   }
   document.getElementById("se-retry")?.addEventListener("click", () => {
-    errorEl.hidden = true;
+    clearScanUi();
     if (state.files.before && state.files.after) startScan();
   });
 
