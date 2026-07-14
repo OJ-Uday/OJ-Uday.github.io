@@ -102,17 +102,30 @@
         </div>
       </div>
 
-      <div class="console" aria-label="Live demo: this page's own telemetry">
-        <div class="console-bar">
-          <span class="pulse" aria-hidden="true"></span>
-          <span class="console-title">live telemetry — this page instruments itself</span>
-          <span class="console-fmt mono" id="fmt-toggle" role="button" tabindex="0"
-                aria-label="toggle event render format">human</span>
-          <span class="console-up mono" id="uptime">0s</span>
-        </div>
-        <div class="feed mono" id="feed" role="log" aria-live="off"></div>
-        <div class="console-foot mono">
-          events stay in your browser · press <kbd>?</kbd> for shortcuts
+      <div class="console-col">
+        <p id="console-privacy" class="console-disclaimer mono">
+          Events render in this tab only — nothing is sent over the network.
+        </p>
+        <noscript>
+          <style>.console{display:none}</style>
+          <p class="console-nojs mono">
+            The live telemetry console is a JavaScript demo — enable scripting to see this page
+            instrument itself in real time. Source on
+            <a href="https://github.com/OJ-Uday/OJ-Uday.github.io">GitHub</a>.
+          </p>
+        </noscript>
+        <div class="console" role="region" aria-label="Live demo: this page's own telemetry" aria-describedby="console-privacy">
+          <div class="console-bar">
+            <span class="pulse" aria-hidden="true"></span>
+            <span class="console-title">live telemetry — this page instruments itself</span>
+            <span class="console-fmt mono" id="fmt-toggle" role="button" tabindex="0"
+                  aria-label="toggle event render format">human</span>
+            <span class="console-up mono" id="uptime">0s</span>
+          </div>
+          <div class="feed mono" id="feed" role="log" aria-live="off"></div>
+          <div class="console-foot mono">
+            press <kbd>?</kbd> for shortcuts
+          </div>
         </div>
       </div>
     </section>
@@ -327,10 +340,22 @@
     <section id="writing">
       <h2><span class="mono h-idx">05</span> Writing</h2>
       <ul class="writing">
-        <li class="reveal"><a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md" data-evt="write.redteam">The vetlock red-team review</a><span> — six adversarial agents, 35 confirmed exploits, adversarial verification with default-REFUTED. 39 of 48 catalogued exploits closed as of v0.4.2.</span></li>
-        <li class="reveal"><a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/SECURITY-DECISIONS.md" data-evt="write.security-decisions">When correctness beats performance</a><span> — the fastest-levenshtein incident, and the principle that governs every security-boundary choice in vetlock.</span></li>
-        <li class="reveal"><a href="https://github.com/OJ-Uday/telemetry-sdk-patterns/blob/main/docs/WHITEPAPER.md" data-evt="write.whitepaper">Self-building instrumentation</a><span> — why telemetry should name the UI itself, and how two-tier identity + capture-time causality make that safe.</span></li>
-        <li class="reveal"><a href="https://github.com/OJ-Uday/gitops-autopilot/blob/main/docs/DESIGN.md" data-evt="write.twoid">The two-identity problem in zero-touch delivery</a><span> — the two GitHub rules that quietly break naive deploy automation, and the arrangements that survive them.</span></li>
+        <li class="reveal">
+          <a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md" data-evt="write.redteam">The vetlock red-team review</a>
+          <p class="writing-teaser">Six adversarial agents, 48 exploit candidates, an adversarial verifier that defaulted to REFUTED — 35 confirmed end-to-end. 39 of 48 catalogued exploits closed as of v0.4.2. What the numbers said the tool wasn't yet.</p>
+        </li>
+        <li class="reveal">
+          <a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/SECURITY-DECISIONS.md" data-evt="write.security-decisions">When correctness beats performance</a>
+          <p class="writing-teaser">A 3x-faster string-distance library looked like an easy win — until "attackers rarely transpose" collided with npm's own typosquat history. Reverted, with tests that pin every transposition case in place — the principle that governs every security-boundary choice in vetlock.</p>
+        </li>
+        <li class="reveal">
+          <a href="https://github.com/OJ-Uday/telemetry-sdk-patterns/blob/main/docs/WHITEPAPER.md" data-evt="write.whitepaper">Self-building instrumentation</a>
+          <p class="writing-teaser">Hand-written analytics loses to features. Auto-capture breaks on every redesign. Nothing captures what a click was for. A sense-understand-act loop that names the UI from its own witnessed effects — two-tier identity + capture-time causality make that safe.</p>
+        </li>
+        <li class="reveal">
+          <a href="https://github.com/OJ-Uday/gitops-autopilot/blob/main/docs/DESIGN.md" data-evt="write.twoid">The two-identity problem in zero-touch delivery</a>
+          <p class="writing-teaser">Two GitHub rules — no self-approval, and GITHUB_TOKEN events don't cascade — quietly break naive deploy automation: the PR opens, required checks never fire, auto-merge stalls forever. Four arrangements that survive them.</p>
+        </li>
       </ul>
     </section>
 

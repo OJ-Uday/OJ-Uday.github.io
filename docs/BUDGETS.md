@@ -10,30 +10,30 @@ The script starts a local static server, runs Lighthouse in both mobile (slow-4G
 
 | Metric | Baseline | Target | Status |
 | --- | --- | --- | --- |
-| Lighthouse Perf (mobile, slow 4G) | 99 | >= 95 | PASS |
-| Lighthouse Perf (desktop, no throttle) | 100 | >= 98 | PASS |
+| Lighthouse Perf (mobile, slow 4G) | 80 | >= 95 | FAIL |
+| Lighthouse Perf (desktop, no throttle) | 96 | >= 98 | FAIL |
 | Lighthouse Accessibility | 100 | >= 98 | PASS |
-| LCP (mobile, slow 4G) | 1656 ms | < 2000 ms | PASS |
-| CLS (mobile) | 0.000 | < 0.05 | PASS |
-| First-view transfer (gz est.) | 30.8 KB | < 200 KB | PASS |
+| LCP (mobile, slow 4G) | 1657 ms | < 2000 ms | PASS |
+| CLS (mobile) | 0.421 | < 0.05 | FAIL |
+| First-view transfer (gz est.) | 33.3 KB | < 200 KB | PASS |
 | design/tokens.css size | 16.0 KB | < 15 KB | FAIL |
 
 ## Detail: Lighthouse
 
 | Category | Mobile (slow 4G) | Desktop (no throttle) |
 | --- | --- | --- |
-| Performance | 99 | 100 |
+| Performance | 80 | 96 |
 | Accessibility | 100 | 100 |
 | Best Practices | 100 | 100 |
 | SEO | 100 | 100 |
 
 | Metric | Mobile | Desktop |
 | --- | --- | --- |
-| LCP | 1656 ms | 43 ms |
-| FCP | 1656 ms | 43 ms |
+| LCP | 1657 ms | 43 ms |
+| FCP | 1657 ms | 43 ms |
 | TBT | 0 ms | 0 ms |
-| CLS | 0.000 | 0.000 |
-| Total transferred (LH) | 125.4 KB | 125.4 KB |
+| CLS | 0.421 | 0.123 |
+| Total transferred (LH) | 132.9 KB | 132.9 KB |
 | Requests (LH) | 7 | 7 |
 
 ## Detail: First-view payload (raw HTTP)
@@ -42,44 +42,19 @@ Same-origin assets that block first paint, byte-counted with a raw GET.
 
 | Asset | Kind | Bytes |
 | --- | --- | --- |
-| `/` | html | 25.3 KB |
+| `/` | html | 26.3 KB |
 | `/design/tokens.css` | css | 16.0 KB |
 | `/design/primitives.css` | css | 17.7 KB |
-| `style.css` | css | 24.3 KB |
-| `app.js` | js | 32.3 KB |
-| **Total (raw)** |  | **115.6 KB** |
-| **Total (gz est.)** |  | **30.8 KB** |
+| `style.css` | css | 28.8 KB |
+| `app.js` | js | 34.4 KB |
+| **Total (raw)** |  | **123.1 KB** |
+| **Total (gz est.)** |  | **33.3 KB** |
 
 ---
 
-Generated: 2026-07-14T08:26:41.316Z
+Generated: 2026-07-14T10:18:59.770Z
 
 Tool versions:
 - node v20.19.2
 - lighthouse 12.8.2
 - chrome-launcher 1.2.1
-
-## Follow-ups & context
-
-**tokens.css raw budget (16.0 KB vs 15 KB target — informational).**
-The 15 KB raw target was set before measurement; gzipped, tokens.css transfers
-at **~4.4 KB** — well inside the 200 KB first-view budget. The file is heavily
-commented on purpose (it's the design system's canonical documentation) and
-strips well. A follow-up will either raise the raw target to reflect the
-comment-density decision or split docs into a sibling `docs/tokens-guide.md`.
-The wire cost is already good.
-
-**Known accessibility trade-off — `--slate-500`.**
-Dark-mode `--color-text-dim` uses the original site value `#647585` for pixel
-parity with the pre-refactor DNA (packet P0 done-gate). At that value it
-computes 3.06:1 against `--color-bg` — AA-large only, not AA-normal. The token
-is annotated in `design/tokens.css` as "UI chrome only" (timestamps, meta
-captions) and MUST NOT be used for body text. Callsites in `style.css` already
-respect this by construction, but this is worth tracking:
-
-- Follow-up ticket (P1 or a future contrast pass): bump `--slate-500` to
-  `#8f9ba8` (contrast 6.91:1 vs `--slate-950`) once we're ready to accept a
-  small visual shift on tertiary UI text in dark mode.
-- Not blocking P0 — Lighthouse Accessibility scores 100 today because Lighthouse
-  audits computed-vs-declared color contrast on rendered text, and no rendered
-  text callsite uses `--color-text-dim` at body-text sizes.
