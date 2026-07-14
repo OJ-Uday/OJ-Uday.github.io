@@ -384,29 +384,26 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
 }
 
 /* ── LCP protection: below-fold sections deferred from initial paint ──
-   Each of these sections carries substantial inline SVG mass (systems
-   diagrams, red-team timeline, project preview strips). Applying
-   content-visibility: auto tells the browser to skip layout + paint
-   for these subtrees when they're off-screen, letting first paint
-   commit as soon as the hero + scan chrome are ready. The
-   contain-intrinsic-size reserves plausible height so the scrollbar
-   doesn't reflow when the section becomes visible.
+   The original blanket `content-visibility: auto` across #systems, #red-team,
+   #projects, #experience, #how-it-works, #proof produced a real LCP win but
+   broke every non-scrolling capture:
+     • Playwright fullPage screenshots showed intrinsic-size placeholders
+       (empty boxes) for every off-screen section — visible ghost boxes.
+     • LinkedIn / Twitter / Discord share-preview scrapers render one
+       viewport without scrolling, so their previews rendered the same
+       ghost-empty page users report as "the site looks broken."
+     • SEO indexers that don't execute scroll heuristics saw the same.
 
-   How-it-works stages already apply this per-stage (see
-   design/how-it-works.css); this covers the remaining large
-   content-heavy sections. */
-#systems,
-#red-team,
-#projects,
-#experience {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 800px;
-}
-/* #how-it-works is the largest below-scan section (~32 KB markup + many
-   inline SVGs across six sticky stages); #proof sits between scan and
-   systems and is SVG-heavy for its size. Reserving realistic intrinsic
-   sizes keeps scrollbar+anchor jumps stable while excluding both from
-   first-paint layout work. */
+   Scoped down 2026-07-14 (perfection follow-up): retain content-visibility
+   only where the perf win is largest AND the content is not share-critical.
+   #how-it-works is a 6-stage scrollytelling section with heavy inline SVGs
+   and only becomes meaningful during scroll — keep. #proof is JS-populated
+   so it's inert at first paint anyway — keep, small intrinsic size.
+   #systems, #red-team, #projects, #experience — the marquee content of
+   the portfolio, MUST render in first-viewport captures. Removed.
+
+   Also: force `visible` for print + reduced-motion + no-JS clients so
+   PDF exports, screenshot users, and accessibility tools see everything. */
 #how-it-works {
   content-visibility: auto;
   contain-intrinsic-size: 1px 1200px;
@@ -414,6 +411,18 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
 #proof {
   content-visibility: auto;
   contain-intrinsic-size: 1px 200px;
+}
+@media print, (prefers-reduced-motion: reduce) {
+  #how-it-works,
+  #proof {
+    content-visibility: visible;
+  }
+}
+/* When JS is off, force visibility on the two remaining c-v:auto sections
+   so no-JS visitors + share-preview scrapers see the full page. */
+html:not(.js) #how-it-works,
+html:not(.js) #proof {
+  content-visibility: visible;
 }
 
 /* ── print ──────────────────────────────────────────────────────────── */

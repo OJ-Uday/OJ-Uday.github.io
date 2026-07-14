@@ -13,9 +13,9 @@ The script starts an in-process Node HTTP server that gzips text responses (matc
 | Lighthouse Perf (mobile, slow 4G) | 99 | >= 95 | PASS |
 | Lighthouse Perf (desktop, no throttle) | 100 | >= 98 | PASS |
 | Lighthouse Accessibility | 100 | >= 98 | PASS |
-| LCP (mobile, slow 4G) | 1805 ms | < 2000 ms | PASS |
+| LCP (mobile, slow 4G) | 1818 ms | < 2000 ms | PASS |
 | CLS (mobile) | 0.000 | < 0.05 | PASS |
-| First-view transfer (gz est.) | 97.0 KB | < 200 KB | PASS |
+| First-view transfer (gz est.) | 97.4 KB | < 200 KB | PASS |
 | design/tokens.css size | 10.3 KB | < 15 KB | PASS |
 
 ## Detail: Lighthouse
@@ -29,11 +29,11 @@ The script starts an in-process Node HTTP server that gzips text responses (matc
 
 | Metric | Mobile | Desktop |
 | --- | --- | --- |
-| LCP | 1805 ms | 45 ms |
-| FCP | 1430 ms | 45 ms |
+| LCP | 1818 ms | 72 ms |
+| FCP | 1443 ms | 72 ms |
 | TBT | 0 ms | 0 ms |
-| CLS | 0.000 | 0.004 |
-| Total transferred (LH) | 106.5 KB | 106.5 KB |
+| CLS | 0.000 | 0.000 |
+| Total transferred (LH) | 106.9 KB | 106.9 KB |
 | Requests (LH) | 16 | 16 |
 
 ## Detail: First-view payload (raw HTTP)
@@ -48,22 +48,22 @@ Same-origin assets that block first paint, byte-counted with a raw GET.
 | `/design/hero.css` | css | 11.9 KB |
 | `/design/scan.css` | css | 38.6 KB |
 | `/design/scan.css` | css | 38.6 KB |
-| `style.css` | css | 23.3 KB |
-| `/design/how-it-works.css` | css | 14.2 KB |
+| `style.css` | css | 23.9 KB |
+| `/design/how-it-works.css` | css | 14.6 KB |
 | `/design/systems.css` | css | 6.5 KB |
 | `/design/red-team.css` | css | 8.9 KB |
 | `/design/projects.css` | css | 5.4 KB |
-| `/design/how-it-works.css` | css | 14.2 KB |
+| `/design/how-it-works.css` | css | 14.6 KB |
 | `/design/systems.css` | css | 6.5 KB |
 | `/design/red-team.css` | css | 8.9 KB |
 | `/design/projects.css` | css | 5.4 KB |
 | `app.js` | js | 72.2 KB |
-| **Total (raw)** |  | **374.8 KB** |
-| **Total (gz est.)** |  | **97.0 KB** |
+| **Total (raw)** |  | **376.1 KB** |
+| **Total (gz est.)** |  | **97.4 KB** |
 
 ---
 
-Generated: 2026-07-14T16:26:01.575Z
+Generated: 2026-07-14T16:47:47.938Z
 
 Tool versions:
 - node v20.19.2

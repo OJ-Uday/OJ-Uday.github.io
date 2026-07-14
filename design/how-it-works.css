@@ -189,9 +189,19 @@
   border-radius: var(--radius-lg);
   scroll-margin-top: 96px;
   /* content-visibility is safe here — stage sizing is stable (aspect-ratio
-     images below), so we can lazy-paint offscreen tiles for perf. */
+     images below), so we can lazy-paint offscreen tiles for perf.
+
+     BUT: override to `visible` for print, reduced-motion, and no-JS
+     clients so PDF exports, screenshot bots, and accessibility tools
+     capture every stage's content. Perfection audit 2026-07-14. */
   content-visibility: auto;
   contain-intrinsic-size: 380px;
+}
+@media print, (prefers-reduced-motion: reduce) {
+  .hiw__stage { content-visibility: visible; }
+}
+html:not(.js) .hiw__stage {
+  content-visibility: visible;
 }
 .hiw__stage:target {
   border-color: var(--accent);
