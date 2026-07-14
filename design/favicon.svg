@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Site favicon. Single source of truth for the tab icon on every page.
+  Both /index.html and /styleguide/index.html reference this file via
+  a <link rel="icon" href="design/favicon.svg">, so any color edit
+  happens here once and propagates to every tab.
+
+  Colors are the two dark-theme brand anchors, matching design/tokens.css:
+    #0a0e13  is the slate-950 primitive, aliased as color-bg
+    #4be3b0  is the teal-300  primitive, aliased as color-accent
+
+  We keep them as literal hex here (not CSS custom properties) because
+  favicons are rendered by a static pipeline that does not execute the
+  page's CSS. The prior tokenization violation was that the same two
+  literals were duplicated as inline data-URLs in two HTML files; this
+  file replaces both, reducing the retheme surface to a single asset.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <circle cx="16" cy="16" r="14" fill="#0a0e13"/>
+  <circle cx="16" cy="16" r="5"  fill="#4be3b0"/>
+  <circle cx="16" cy="16" r="9"  fill="none"
+          stroke="#4be3b0" stroke-opacity=".45" stroke-width="2"/>
+</svg>
