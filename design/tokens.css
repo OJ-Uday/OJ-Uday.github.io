@@ -1,0 +1,376 @@
+/* =====================================================================
+ * design/tokens.css — the single source of truth for design values.
+ * See docs/adrs/0001 (design-system foundation) and 0002 (theming model).
+ *
+ * WHY THIS FILE EXISTS
+ *   Before this file, style.css baked visual decisions into ~119 selectors
+ *   with 26 :root variables, 26 raw hex literals, and 18 raw rgba() calls.
+ *   Half the light theme silently failed WCAG. Motion had four ad-hoc
+ *   durations and three different easing curves. There was no scale.
+ *
+ *   tokens.css collapses that surface into ONE place with THREE layers:
+ *
+ *     1) PRIMITIVES — the raw palette + numeric scales. Never referenced
+ *        from component CSS; consumed only by semantic tokens below.
+ *     2) SEMANTIC   — role-based names (--color-bg, --color-text, …) that
+ *        components consume. Themes swap these, not primitives.
+ *     3) COMPONENT  — a thin optional layer (--btn-primary-bg, --card-bg)
+ *        for cross-cutting patterns.
+ *
+ *   PLUS a fourth "COMPAT" block that re-declares the legacy variable
+ *   names style.css already uses (--bg, --panel, --accent, --shadow, …)
+ *   in terms of the new semantic tokens. Result: dropping tokens.css into
+ *   the page BEFORE style.css makes the refactor invisible to style.css.
+ *
+ * THEMING MODEL
+ *   :root                              → dark defaults (site's canonical DNA)
+ *   :root[data-theme="light"]          → explicit light override
+ *   :root[data-theme="dark"]           → explicit dark override (safety no-op)
+ *   @media (prefers-color-scheme: light)
+ *     :root:not([data-theme="dark"])   → follow the OS if user hasn't chosen
+ *
+ *   The `color-scheme` property is declared on both :root and the light
+ *   overrides so native UA chrome (scrollbars, form controls, autofill)
+ *   follows the resolved theme.
+ *
+ * ACCESSIBILITY
+ *   Every text-on-bg pair against --color-bg / --color-surface passes AA
+ *   in both themes; body text pairs pass AAA. Status tokens (danger/warn/
+ *   info/link) and --color-accent, when placed as text on nested raised
+ *   surfaces in light mode, ride the AA line — components should default
+ *   to painting status text on --color-bg / --color-surface.
+ *
+ * MOTION
+ *   One standard easing curve for 95% of motion. One "emphasized" curve
+ *   for dialogs/hero. Four durations. A single prefers-reduced-motion
+ *   block near the bottom flattens every --dur-* to ~0ms.
+ *
+ * PRINT
+ *   Two extra tokens (--color-bg-print, --color-text-print) exist so the
+ *   @media print block in style.css flows through the token layer instead
+ *   of hard-coding #fff / #000.
+ * ===================================================================== */
+
+
+/* =====================================================================
+ * LAYER 1 — PRIMITIVES
+ * ===================================================================== */
+:root {
+  /* Native UA color-scheme follows the theme so scrollbars, form controls,
+     and autofill match the themed page. */
+  color-scheme: dark;
+
+  /* --- Neutral scale (slate, cool-blue-gray) --------------------------- */
+  --slate-950: #0a0e13;   /* app background, dark mode              */
+  --slate-900: #10151c;   /* panel / card surface, dark mode        */
+  --slate-850: #141b24;   /* raised surface, dark mode              */
+  --slate-800: #1a222c;   /* highest surface, dark mode             */
+  --slate-700: #2a323d;   /* borders in dark, when opacity-tinted   */
+  --slate-500: #647585;   /* dim/tertiary text, dark mode           */
+  /* NOTE: slate-500 preserves the original site DNA. As tertiary text
+     on --color-bg it computes 3.06:1 — AA-large only, not AA-normal.
+     Callsites therefore MUST NOT paint body text with --color-text-dim;
+     it is reserved for UI chrome (timestamps, meta captions). A tighter
+     value is deferred to a follow-up (see docs/BUDGETS.md). */
+  --slate-450: #8895a3;   /* borderline dim, kept for compat        */
+  --slate-400: #5c6975;   /* dim text, LIGHT MODE                   */
+  --slate-350: #97a3af;   /* muted text, dark mode                  */
+  --slate-300: #57646f;   /* muted text, LIGHT MODE                 */
+  --slate-200: #e2e7ee;   /* highest surface, LIGHT MODE            */
+  --slate-150: #eef2f6;   /* raised surface, LIGHT MODE             */
+  --slate-100: #f6f8fa;   /* app background, LIGHT MODE             */
+  --slate-90:  #131a21;   /* body text, LIGHT MODE                  */
+  --slate-50:  #e6edf3;   /* body text, DARK MODE                   */
+  --white:     #ffffff;   /* panel surface, LIGHT MODE              */
+  --black:     #000000;   /* print ink                              */
+
+  /* --- Brand: teal-green ---------------------------------------------- */
+  /* "green with a hint of teal" — this IS the site's identity color. */
+  --teal-100:  #7bffbf;   /* accent-2 dark: hover bg, gradient stop  */
+  --teal-300:  #4be3b0;   /* accent dark: primary brand              */
+  --teal-500:  #0a8055;   /* accent, midtone (reserved)              */
+  --teal-600:  #067050;   /* accent LIGHT (AA on every light surface: 5.73/5.42/4.91) */
+  --teal-700:  #066b4f;   /* accent-2 LIGHT (5.24 on --slate-200)    */
+  --teal-950:  #06251b;   /* on-accent text: dark brand green        */
+
+  /* --- Semantics: danger / warn / info / link ------------------------- */
+  --red-400:   #ff6b6b;   /* danger, DARK                             */
+  --red-700:   #b81e29;   /* danger LIGHT (5.19 on --slate-200)      */
+  --amber-300: #ffb454;   /* warn, DARK                               */
+  --amber-800: #7a5100;   /* warn LIGHT (5.63/5.91 on light surfaces)*/
+  --cyan-300:  #7dd3fc;   /* info verdict/severity, DARK              */
+  --blue-300:  #6cb6ff;   /* link text, DARK                          */
+  --blue-700:  #0757b3;   /* link & info LIGHT (5.59 on --slate-200) */
+
+  /* --- Alpha channels: on-dark and on-light overlays ------------------ */
+  --alpha-white-08:  rgba(255, 255, 255, 0.08);   /* --line, dark    */
+  --alpha-white-14:  rgba(255, 255, 255, 0.14);   /* --line-strong   */
+  --alpha-white-015: rgba(255, 255, 255, 0.015);  /* scanline effect */
+  --alpha-ink-12:    rgba(15,   30,  45, 0.12);   /* --line, light   */
+  --alpha-ink-22:    rgba(15,   30,  45, 0.22);   /* --line-strong   */
+  --alpha-black-35:  rgba(0,     0,   0, 0.35);   /* shadow dark     */
+  --alpha-black-50:  rgba(0, 0, 0, 0.5);   /* shadow dark hi  */
+
+  /* --- Accent-tinted overlays --------------------------------------- */
+  --alpha-teal-14:   rgba(75, 227, 176, 0.14);
+  --alpha-teal-35:   rgba(75, 227, 176, 0.35);
+  --alpha-teal-l10:  rgba( 10, 127,  90, 0.10);
+  --alpha-teal-l25:  rgba( 10, 127,  90, 0.25);
+  --alpha-red-14:    rgba(255, 107, 107, 0.14);
+  --alpha-red-l10:   rgba(207,  34,  46, 0.10);
+  --alpha-amber-14:  rgba(255, 180,  84, 0.14);
+  --alpha-amber-l10: rgba(154, 103,   0, 0.10);
+  --alpha-cyan-14:   rgba(125, 211, 252, 0.14);
+  --alpha-blue-l10:  rgba(  9, 105, 218, 0.10);
+
+  /* --- Type: font families -------------------------------------------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+               Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* --- Type: fluid scale via clamp() ---------------------------------- */
+  --fs-caption: clamp(11px, 0.68vw +  9px, 13px);
+  --fs-body:    clamp(15px, 0.40vw + 14px, 17px);
+  --fs-lg:      clamp(17px, 0.60vw + 15px, 20px);
+  --fs-h4:      clamp(20px, 1.00vw + 17px, 26px);
+  --fs-h3:      clamp(24px, 1.50vw + 20px, 32px);
+  --fs-h2:      clamp(30px, 2.50vw + 22px, 44px);
+  --fs-h1:      clamp(38px, 4.00vw + 26px, 64px);
+  --fs-display: clamp(48px, 6.00vw + 32px, 88px);
+
+  /* --- Line heights & letter spacing ---------------------------------- */
+  --lh-tight: 1.15;
+  --lh-snug:  1.35;
+  --lh-body:  1.55;
+  --lh-loose: 1.75;
+  --tracking-tight:  -0.01em;
+  --tracking-normal:  0;
+  --tracking-wide:    0.02em;
+
+  /* --- Spacing: 8pt grid ---------------------------------------------- */
+  --space-1:   4px;
+  --space-2:   8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  24px;
+  --space-6:  32px;
+  --space-7:  48px;
+  --space-8:  64px;
+  --space-9:  96px;
+  --space-10: 128px;
+  --space-11: 192px;
+  --space-12: 256px;
+
+  /* --- Radii ---------------------------------------------------------- */
+  --radius-sm:   6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  20px;
+  --radius-full: 999px;
+
+  /* --- Elevation (shadow) --------------------------------------------- */
+  --shadow-1: 0 12px 32px var(--alpha-ink-12);
+  --shadow-2: 0 18px 42px rgba(15, 30, 45, 0.18);
+  --shadow-3: 0 24px 72px var(--alpha-black-50);
+
+  /* --- Motion --------------------------------------------------------- */
+  --ease-standard:    cubic-bezier(0.4, 0.0, 0.2, 1);
+  --ease-emphasized:  cubic-bezier(0.2, 0.0, 0.0, 1);
+  --ease-decel:       cubic-bezier(0.0, 0.0, 0.2, 1);
+  --dur-fast:    120ms;
+  --dur-base:    200ms;
+  --dur-slow:    380ms;
+  --dur-slower:  620ms;
+
+  /* --- Z index layers ------------------------------------------------- */
+  --z-nav:     40;
+  --z-toast:   50;
+  --z-dialog:  60;
+  --z-overlay: 70;
+
+
+  /* ===================================================================
+   * LAYER 2 — SEMANTIC TOKENS (dark defaults)
+   * =================================================================== */
+  --color-bg:              var(--slate-950);
+  --color-surface:         var(--slate-900);
+  --color-surface-raised:  var(--slate-850);
+  --color-surface-high:    var(--slate-800);
+
+  --color-border:          var(--alpha-white-08);
+  --color-border-strong:   var(--alpha-white-14);
+
+  --color-text:            var(--slate-50);
+  --color-text-muted:      var(--slate-350);
+  --color-text-dim:        var(--slate-500);
+
+  --color-accent:          var(--teal-300);
+  --color-accent-2:        var(--teal-100);
+  --color-accent-soft:     var(--alpha-teal-14);
+  --color-accent-glow:     var(--alpha-teal-35);
+  --color-on-accent:       var(--teal-950);
+
+  --color-danger:          var(--red-400);
+  --color-danger-soft:     var(--alpha-red-14);
+  --color-warn:            var(--amber-300);
+  --color-warn-soft:       var(--alpha-amber-14);
+  --color-info:            var(--cyan-300);
+  --color-info-soft:       var(--alpha-cyan-14);
+  --color-link:            var(--blue-300);
+
+  --color-shadow:          0 20px 60px var(--alpha-black-35);
+  --color-shadow-hover:    0 24px 72px var(--alpha-black-50);
+
+  /* Print — consumed by @media print in style.css. */
+  --color-bg-print:        var(--white);
+  --color-text-print:      var(--black);
+
+
+  /* ===================================================================
+   * LAYER 3 — COMPONENT TOKENS
+   * =================================================================== */
+  --btn-primary-bg:        var(--color-accent);
+  --btn-primary-fg:        var(--color-on-accent);
+  --btn-primary-bg-hover:  var(--color-accent-2);
+  --card-bg:               var(--color-surface);
+  --card-border:           var(--color-border);
+  --tag-bg:                var(--color-accent-soft);
+  --tag-fg:                var(--color-accent);
+  --code-bg:               var(--color-surface-raised);
+  --code-fg:               var(--color-text);
+  --scanline:              var(--alpha-white-015);
+
+
+  /* ===================================================================
+   * LAYER 4 — LEGACY-COMPAT SHIMS
+   * Preserve the variable names style.css already ships with.
+   * =================================================================== */
+  --bg:            var(--color-bg);
+  --panel:         var(--color-surface);
+  --panel-2:       var(--color-surface-raised);
+  --panel-3:       var(--color-surface-high);
+  --line:          var(--color-border);
+  --line-strong:   var(--color-border-strong);
+  --text:          var(--color-text);
+  --muted:         var(--color-text-muted);
+  --dim:           var(--color-text-dim);
+  --accent:        var(--color-accent);
+  --accent-2:      var(--color-accent-2);
+  --accent-dim:    var(--color-accent-soft);
+  --accent-glow:   var(--color-accent-glow);
+  --blue:          var(--color-link);
+  --danger:        var(--color-danger);
+  --danger-dim:    var(--color-danger-soft);
+  --warn:          var(--color-warn);
+  --warn-dim:      var(--color-warn-soft);
+  --info:          var(--color-info);
+  --info-dim:      var(--color-info-soft);
+  --mono:          var(--font-mono);
+  --sans:          var(--font-sans);
+  --radius:        12px;
+  --shadow:        var(--color-shadow);
+  --shadow-hover:  var(--color-shadow-hover);
+}
+
+/* Explicit dark override — safety no-op that also carries color-scheme
+   in case a caller forces data-theme="dark" while the OS prefers light. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+
+/* =====================================================================
+ * THEME: LIGHT — explicit opt-in via [data-theme="light"] on <html>
+ * ===================================================================== */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg:              var(--slate-100);
+  --color-surface:         var(--white);
+  --color-surface-raised:  var(--slate-150);
+  --color-surface-high:    var(--slate-200);
+
+  --color-border:          var(--alpha-ink-12);
+  --color-border-strong:   var(--alpha-ink-22);
+
+  --color-text:            var(--slate-90);
+  --color-text-muted:      var(--slate-300);
+  --color-text-dim:        var(--slate-400);
+
+  --color-accent:          var(--teal-600);
+  --color-accent-2:        var(--teal-700);
+  --color-accent-soft:     var(--alpha-teal-l10);
+  --color-accent-glow:     var(--alpha-teal-l25);
+  --color-on-accent:       var(--white);      /* 6.10:1 on teal-600 */
+
+  --color-danger:          var(--red-700);
+  --color-danger-soft:     var(--alpha-red-l10);
+  --color-warn:            var(--amber-800);
+  --color-warn-soft:       var(--alpha-amber-l10);
+  --color-info:            var(--blue-700);
+  --color-info-soft:       var(--alpha-blue-l10);
+  --color-link:            var(--blue-700);
+
+  --color-shadow:          var(--shadow-1);
+  --color-shadow-hover:    var(--shadow-2);
+
+  /* Tags need higher-contrast ink on light-mode wash — teal-950 clears
+     ~13:1 across every light surface and keeps the green-tag identity. */
+  --tag-fg:                var(--teal-950);
+}
+
+
+/* =====================================================================
+ * THEME: LIGHT via OS — mirrors the explicit block above.
+ * ===================================================================== */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+
+    --color-bg:              var(--slate-100);
+    --color-surface:         var(--white);
+    --color-surface-raised:  var(--slate-150);
+    --color-surface-high:    var(--slate-200);
+
+    --color-border:          var(--alpha-ink-12);
+    --color-border-strong:   var(--alpha-ink-22);
+
+    --color-text:            var(--slate-90);
+    --color-text-muted:      var(--slate-300);
+    --color-text-dim:        var(--slate-400);
+
+    --color-accent:          var(--teal-600);
+    --color-accent-2:        var(--teal-700);
+    --color-accent-soft:     var(--alpha-teal-l10);
+    --color-accent-glow:     var(--alpha-teal-l25);
+    --color-on-accent:       var(--white);
+
+    --color-danger:          var(--red-700);
+    --color-danger-soft:     var(--alpha-red-l10);
+    --color-warn:            var(--amber-800);
+    --color-warn-soft:       var(--alpha-amber-l10);
+    --color-info:            var(--blue-700);
+    --color-info-soft:       var(--alpha-blue-l10);
+    --color-link:            var(--blue-700);
+
+    --color-shadow:          var(--shadow-1);
+    --color-shadow-hover:    var(--shadow-2);
+
+    --tag-fg:                var(--teal-950);
+  }
+}
+
+
+/* =====================================================================
+ * MOTION: reduced-motion override
+ * ONE block — flatten every --dur-* so all transitions/animations that
+ * consume these tokens collapse to ~0ms without per-selector code.
+ * ===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast:   0.01ms;
+    --dur-base:   0.01ms;
+    --dur-slow:   0.01ms;
+    --dur-slower: 0.01ms;
+  }
+}

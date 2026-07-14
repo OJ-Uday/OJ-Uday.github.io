@@ -1,0 +1,29 @@
+{
+  "name": "oj-uday-github-io",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Personal site for OJ Uday — static site served from repo root, with dev-only tooling for tests, color-token gates, and performance budgets.",
+  "author": "OJ Uday",
+  "license": "MIT",
+  "homepage": "https://oj-uday.github.io",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OJ-Uday/OJ-Uday.github.io.git"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:install": "playwright install --with-deps chromium",
+    "gate:colors": "node scripts/no-hardcoded-colors.mjs",
+    "gate:budgets": "node scripts/measure-baseline.mjs",
+    "serve": "python3 -m http.server 4173 --bind 127.0.0.1",
+    "check": "npm run gate:colors && npm run test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "lighthouse": "^12.0.0",
+    "chrome-launcher": "^1.0.0"
+  }
+}

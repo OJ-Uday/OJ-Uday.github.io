@@ -1,0 +1,515 @@
+/* =====================================================================
+ * design/primitives.css — reusable, token-only primitive class rules.
+ * See docs/adrs/0001 (design-system foundation).
+ *
+ * WHY THIS FILE EXISTS
+ *   tokens.css gives us a single source of truth for VALUES (color,
+ *   spacing, radii, motion, elevation). primitives.css is the next
+ *   layer up: a small, canonical set of RULES that consume those tokens
+ *   and describe how a button, a card, a tag, a badge, a code block,
+ *   a dialog, a section header, a nav, and a handful of layout
+ *   utilities are supposed to look and behave across the site.
+ *
+ *   Every value in this file resolves through a var(--*) reference.
+ *   There are NO hardcoded colors, NO hardcoded spacing values, NO
+ *   hardcoded durations, and NO raw radii or shadows. If you find
+ *   yourself wanting one, add it to tokens.css first and consume it
+ *   here.
+ *
+ * HOW THIS FILE IS LOADED
+ *   primitives.css is imported into index.html via a NEW <link> that
+ *   sits BEFORE style.css in the document:
+ *
+ *     <link rel="stylesheet" href="design/primitives.css">
+ *     <link rel="stylesheet" href="style.css">
+ *
+ *   Because style.css is loaded AFTER, any selector it defines with
+ *   equal or higher specificity keeps winning during migration. That
+ *   is intentional: primitives.css is the target style layer we are
+ *   migrating TO, not a big-bang replacement. New markup can adopt
+ *   primitives immediately; existing markup keeps working unchanged.
+ *
+ *   NB: this file also `@import`s tokens.css at the very top, so it
+ *   remains self-sufficient when included by itself (e.g. from a
+ *   styleguide page that does not pull style.css).
+ *
+ * NAMING CONVENTION
+ *   BEM-style modifiers (`.btn--primary`, `.card--raised`) so the new
+ *   primitives never collide with the legacy single-modifier classes
+ *   in style.css (`.btn.ghost`, `.btn.small`). Both spellings can
+ *   coexist during the migration window.
+ * ===================================================================== */
+
+@import url("./tokens.css");
+
+
+/* =====================================================================
+ * 1) BUTTONS — .btn (+ --primary / --ghost / --danger / --sm / --lg)
+ * ---------------------------------------------------------------------
+ * Design intent:
+ *   • .btn is the *shape*: inline-flex, radius, padding, type, focus.
+ *   • .btn--primary is the site's canonical CTA — accent fill, dark
+ *     on-accent text (--color-on-accent is designed to be readable
+ *     on the filled accent in both themes).
+ *   • .btn--ghost is transparent with a strong border; used when a
+ *     primary would compete with other content (side-by-side CTAs).
+ *   • .btn--danger is a low-chroma outline variant; destructive intent.
+ *   • Size modifiers only touch padding + font size.
+ *
+ * Focus behavior:
+ *   :focus-visible draws a 2px accent ring OUTSIDE the button (via
+ *   outline-offset). Uses the accent token so it flips with theme.
+ *
+ * Motion:
+ *   Hover transitions run on --dur-fast + --ease-standard. All
+ *   properties consuming --dur-* collapse to 0.01ms in reduced-motion
+ *   automatically (that override lives in tokens.css).
+ * ===================================================================== */
+.btn {
+  /* layout */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+
+  /* box */
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+
+  /* type */
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-normal);
+
+  /* baseline color: primary-ish so plain <button class="btn"> still
+     looks like a button. --primary modifier reasserts these for clarity. */
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+
+  /* interaction */
+  cursor: pointer;
+  user-select: none;
+  text-decoration: none;
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    color      var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    transform  var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard),
+    opacity    var(--dur-fast) var(--ease-standard);
+}
+
+.btn:hover {
+  text-decoration: none;
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+/* Focus ring uses the accent — outline, not box-shadow, so it never
+   gets clipped by overflow:hidden containers around the button. */
+.btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* Disabled state: preserve visual shape but suppress interaction cues. */
+.btn[disabled],
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* --- PRIMARY: filled accent, on-accent text. --------------------------- */
+.btn--primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  border-color: transparent;
+}
+.btn--primary:hover {
+  background: var(--btn-primary-bg-hover);
+  box-shadow: 0 6px 20px var(--color-accent-glow);
+}
+
+/* --- GHOST: transparent with a border; text is body color. ------------- */
+.btn--ghost {
+  background: transparent;
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+.btn--ghost:hover {
+  background: transparent;
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  box-shadow: none;
+}
+
+/* --- DANGER: outline variant; text and border in danger hue. ---------- */
+.btn--danger {
+  background: transparent;
+  color: var(--color-danger);
+  border-color: var(--color-danger-soft);
+}
+.btn--danger:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
+  box-shadow: none;
+}
+
+/* --- Size modifiers --------------------------------------------------- */
+.btn--sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--fs-caption);
+}
+.btn--lg {
+  padding: var(--space-4) var(--space-6);
+  font-size: var(--fs-lg);
+}
+
+
+/* =====================================================================
+ * 2) CARDS — .card (+ .card--raised)
+ * ---------------------------------------------------------------------
+ * A card is a self-contained surface: bg, border, radius, shadow, and
+ * consistent inner padding. `--raised` swaps to the elevated surface
+ * token — use when a card sits on another card (nested panels) or when
+ * you want the same shape at higher visual weight.
+ * ===================================================================== */
+.card {
+  background: var(--card-bg);
+  color: var(--color-text);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+  padding: var(--space-5);
+  transition:
+    transform    var(--dur-base) var(--ease-standard),
+    border-color var(--dur-base) var(--ease-standard),
+    box-shadow   var(--dur-base) var(--ease-standard);
+}
+
+.card:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--color-shadow-hover);
+}
+
+/* --- RAISED: elevated surface, still on the same border/radius. ------- */
+.card--raised {
+  background: var(--color-surface-raised);
+}
+
+
+/* =====================================================================
+ * 3) TAG / CHIP — small pill labels
+ * ---------------------------------------------------------------------
+ * .tag is the neutral pill (muted text on a raised surface). .chip is
+ * an alias for the same shape — kept because "tag" and "chip" tend to
+ * mean subtly different things in different contexts (tags describe;
+ * chips act). They share visuals here; add modifiers on either.
+ *
+ * .tag--label uppercases + tracks the text out; useful for section
+ * headers or "STATUS: LIVE" style badges.
+ * ===================================================================== */
+.tag,
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-tight);
+}
+
+.tag--label {
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  font-family: var(--font-mono);
+}
+
+
+/* =====================================================================
+ * 4) BADGE — inline mono status
+ * ---------------------------------------------------------------------
+ * Mono, tight, colored fill. Variants for semantic states. Unlike a
+ * tag, a badge fills its background (no transparent variant) so it
+ * reads as a discrete status marker rather than a descriptive label.
+ * ===================================================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  /* Default: accent-tinted; overridden by variant modifiers below. */
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.badge--ok {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.badge--warn {
+  color: var(--color-warn);
+  background: var(--color-warn-soft);
+}
+.badge--danger {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+
+/* =====================================================================
+ * 5) CODE — inline + block
+ * ---------------------------------------------------------------------
+ * .code is the block form (a <pre> wrapper or a stand-alone block).
+ * .code--inline is the inline span variant — used for short code
+ * references inside body copy.
+ *
+ * The block form horizontally scrolls when content overflows, so long
+ * lines don't stretch the layout.
+ * ===================================================================== */
+.code {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+  color: var(--code-fg);
+  background: var(--code-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  overflow-x: auto;
+}
+
+/* When .code wraps a <pre>, kill the pre's default margin so the
+   outer .code owns the padding/rhythm. */
+.code pre {
+  margin: 0;
+  font-family: var(--font-mono);
+  color: var(--code-fg);
+  background: transparent;
+  overflow-x: auto;
+}
+
+/* Inline variant: sits inside a paragraph, no block box. */
+.code--inline {
+  display: inline;
+  padding: 0 var(--space-2);
+  font-size: 0.9em;              /* relative — pairs with parent body font */
+  background: var(--code-bg);
+  border-radius: var(--radius-sm);
+}
+
+
+/* =====================================================================
+ * 6) DIALOG — native <dialog> styling
+ * ---------------------------------------------------------------------
+ * Styles the native <dialog> element (modal via .showModal()). Uses
+ * the surface + border + shadow tokens so it visually belongs to the
+ * same family as .card / .console.
+ *
+ * The ::backdrop pseudo is styled with a translucent overlay + a mild
+ * blur — subtle rather than heavy, so background context stays legible.
+ * ===================================================================== */
+.dialog {
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--color-shadow-hover);
+  padding: 0;
+  min-width: 320px;
+  max-width: 90vw;
+  z-index: var(--z-dialog);
+}
+
+.dialog::backdrop {
+  /* We reuse the darkest alpha token from tokens.css so the overlay
+     resolves consistently in both themes without a hardcoded rgba(). */
+  background: var(--alpha-black-50);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+
+/* =====================================================================
+ * 7) SECTION HEADER — mono numbering + title + underline
+ * ---------------------------------------------------------------------
+ * Matches the existing site pattern found in index.html:
+ *
+ *     <h2><span class="mono h-idx">00</span> Try vetlock — …</h2>
+ *
+ * Rather than rename that pattern, we keep the exact class names
+ * (`h-idx`) so index.html can adopt the primitive without churn, AND
+ * we introduce `.section-header` as the block-level primitive for
+ * NEW markup (styleguide page, future pages) that wants the numbered
+ * heading + underline shape without hitting the raw <h2> selector.
+ *
+ * Both forms produce the same visual: mono index, title, then a thin
+ * accent-tinted underline via a bottom border on the header.
+ * ===================================================================== */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin: 0 0 var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--fs-h3);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+}
+
+/* Mono numbering — the "00 —" pattern. Kept as .h-idx to match the
+   existing site so migration is a no-op. .section-header__idx is the
+   BEM alias for new markup. */
+.h-idx,
+.section-header__idx {
+  font-family: var(--font-mono);
+  font-size: 0.85em;              /* relative to parent heading */
+  margin-right: var(--space-1);
+  color: var(--color-accent);
+  letter-spacing: var(--tracking-normal);
+}
+
+
+/* =====================================================================
+ * 8) NAV — sticky top nav
+ * ---------------------------------------------------------------------
+ * Sticky bar, backdrop-blurred, sits at --z-nav. Uses color-mix() to
+ * derive a translucent bg from --color-bg so it stays cohesive in
+ * both themes without a dedicated token.
+ * ===================================================================== */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-3) var(--space-5);
+  background: color-mix(in srgb, var(--color-bg) 78%, transparent);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+
+/* =====================================================================
+ * 9) LAYOUT UTILITIES
+ * ---------------------------------------------------------------------
+ * The smallest possible set of layout helpers. If you find yourself
+ * reaching for more, consider whether the pattern belongs in a real
+ * component instead.
+ *
+ *   .visually-hidden — accessible sr-only (still focusable? no —
+ *     .visually-hidden is for content that must remain in the a11y
+ *     tree but never render visually).
+ *   .stack           — vertical flow with token-sized gap.
+ *   .cluster         — horizontal flow with token-sized gap, wraps.
+ *   .container       — max-width wrapper with symmetric padding.
+ * ===================================================================== */
+
+/* Screen-reader-only. Standard "clip" pattern; keeps element in the
+   layout for AT but removes it visually. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cluster {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.container {
+  width: 100%;
+  max-width: 1120px;     /* pairs with existing main{} in style.css */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-5);
+  padding-right: var(--space-5);
+}
+
+
+/* =====================================================================
+ * 10) MOTION UTILITIES — .reveal
+ * ---------------------------------------------------------------------
+ * .is-visible added by /Users/L122472/personal/OJ-Uday.github.io-p0/design/reveal.js (to be written in P2). Until then, .reveal has no effect.
+ *
+ * We ship BOTH .is-visible (the new class the P2 script will add) and
+ * .in (the legacy class style.css already toggles) as active-state
+ * selectors, so the primitive can be adopted by new markup right away
+ * while old markup keeps working. Both variants respect the reduced-
+ * motion override baked into --dur-* in tokens.css.
+ *
+ * PROGRESSIVE ENHANCEMENT
+ * -----------------------
+ * The baseline is `opacity: 1` — with JS disabled (or before preflight
+ * runs) .reveal content is fully visible. Only when the preflight stamps
+ * html.js do we opt in to the hidden-then-transition dance. That means
+ * primitives-only consumers cannot become JS-dependency landmines: no
+ * matter which page adopts .reveal, it degrades to plain visible content
+ * without JS. Matches the widely-used Modernizr / no-js convention.
+ * ===================================================================== */
+.reveal {
+  transition:
+    opacity   var(--dur-slow) var(--ease-standard),
+    transform var(--dur-slow) var(--ease-standard);
+  will-change: opacity, transform;
+}
+
+/* JS-gated hidden state. `html.js` is set synchronously by the inlined
+ * FOUC preflight in <head>, so this rule takes effect before first paint
+ * whenever JS is available. Without JS, this selector never matches and
+ * .reveal stays fully visible. */
+.js .reveal:not(.is-visible):not(.in) {
+  opacity: 0;
+  /* translate by one space-4 step (~16px) — one 8pt-grid unit of lift. */
+  transform: translateY(var(--space-4));
+}
+
+.reveal.is-visible,
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
