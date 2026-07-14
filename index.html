@@ -36,13 +36,49 @@
   <link rel="stylesheet" href="/design/tokens.css">
   <link rel="stylesheet" href="/design/primitives.css">
   <link rel="stylesheet" href="/design/hero.css">
+  <!-- Critical hero rules inlined so the LCP element (.lede) reaches its
+       FINAL rendered size at first paint, not after style.css finishes.
+       Without this, the .lede reflows from its browser-default box to
+       its final 380x200 box after style.css applies, which Lighthouse
+       credits as a fresh LCP frame and pushes LCP ~450 ms past FCP on
+       slow 4G. Duplicates a small handful of rules from style.css and
+       is kept tightly scoped (hero + LCP-adjacent nodes only) — the
+       full stylesheet is still loaded and remains authoritative.
+       #scan gets content-visibility:auto so its 200-line, 11 KB subtree
+       does not participate in layout during first paint (the browser
+       still parses it into the DOM, so JS still works; layout is
+       skipped until scroll gets close). Sub-1 KB total; no first-view
+       budget impact. -->
+  <style>
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);margin:0;line-height:1.65;font-size:16px}
+    main{max-width:1120px;margin:0 auto;padding:0 24px}
+    section{padding:64px 0 12px}
+    .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;min-height:78vh;padding-top:48px}
+    .kicker{color:var(--accent);font-family:var(--mono);font-size:.85rem;letter-spacing:.06em;text-transform:lowercase;margin:0}
+    h1{font-size:clamp(2.4rem,6.5vw,3.8rem);line-height:1.06;margin:10px 0 20px;letter-spacing:-.025em;font-weight:700}
+    .lede{color:var(--muted);font-size:1.08rem;max-width:34em}
+    @media (max-width:900px){.hero{grid-template-columns:1fr;min-height:0;gap:28px}}
+    #scan{content-visibility:auto;contain-intrinsic-size:900px 1400px}
+  </style>
+  <!-- P3 scanner-specific styling. Deferred off the critical path via
+       rel="preload" + onload swap — the #scan section sits below the
+       fold and is JS-driven, and blocking on scan.css delays FCP. The
+       earlier `media="print"` variant fetched scan.css at LOW priority
+       (browsers deprioritize print sheets), which regressed LCP even
+       more. Load ORDER in <head> still places scan.css BEFORE style.css
+       so scan.css's legacy scanner rules (moved from style.css in the
+       P3 refactor) sit lower in the cascade than any style.css
+       override — matching the pre-move behavior. The <noscript> fallback
+       guarantees the styles still apply when scripting is disabled. -->
+  <link rel="preload" as="style" href="/design/scan.css" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="/design/scan.css"></noscript>
   <link rel="stylesheet" href="style.css">
   <!-- Theme toggle needs JS to function; hide it when scripting is off so it doesn't look interactive-but-inert.
        The .reveal override here is a belt-and-suspenders fallback: primitives.css already keeps .reveal visible
        by default and only hides it when `html.js` is present (stamped by the preflight above), so no-JS clients
        never see the pre-animation state. The <noscript> rule guarantees the same for the legacy .reveal in
        style.css, and covers the edge case where a page loads style.css without the preflight. -->
-  <noscript><style>.nav-theme-toggle{display:none}.reveal{opacity:1;transform:none}</style></noscript>
+  <noscript><style>.nav-theme-toggle{display:none}.reveal{opacity:1;transform:none}#scan-mode,#panel-diff,#panel-profile,.scan-actions,#scan-readonly-banner,#scan-progress,#scan-result,#scan-error{display:none!important}</style></noscript>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -141,32 +177,142 @@
     </section>
 
     <!-- ───────────────────────── vetlock scanner ───────────────────────── -->
-    <section id="scan" class="scan">
-      <h2><span class="mono h-idx">00</span> Try vetlock — scan a real lockfile
-        <span class="tag mono live" aria-label="live"><span class="tag-dot" aria-hidden="true"></span>live</span>
+    <section id="scan" class="scan" data-scan-mode="profile">
+      <h2><span class="mono h-idx">00</span> Try vetlock — bundled fixture demo
+        <span class="tag mono" aria-label="demo mode"><span class="tag-dot" aria-hidden="true"></span>demo</span>
       </h2>
       <p class="scan-lede">
-        Drop a <code>package-lock.json</code> pair (before + after an update), or click
-        <em>Try example</em>. We dispatch a real GitHub Actions workflow that runs vetlock
-        against your lockfiles and posts the findings back — no account, no signup, no cost
-        to you. <a href="https://github.com/OJ-Uday/vetlock" data-evt="scan.readme">How it works ↗</a>
+        Try vetlock on one of two bundled fixtures — the real
+        <em>Shai-Hulud</em> hijack, or a benign <code>debug@4.3.4 → 4.3.5</code> bump —
+        with <em>Try malicious</em> / <em>Try benign</em> below. Scanning your own
+        lockfile stays off by default: live-npm scanning of arbitrary lockfiles is
+        gated behind vetlock v0.4 + this site's startup packet.
+        <a href="https://github.com/OJ-Uday/vetlock" data-evt="scan.readme">How it works ↗</a>
       </p>
 
-      <div class="scan-wrap">
-        <div class="scan-inputs">
-          <div class="dropzone" id="dz-before" data-slot="before" data-label="before" tabindex="0"
-               role="button" aria-label="Drop package-lock.before.json or click to select">
-            <div class="dz-label mono">package-lock.<span class="accent">before</span>.json</div>
-            <div class="dz-hint">drop file · or click to select</div>
-            <div class="dz-meta mono" hidden></div>
-            <input type="file" accept=".json,application/json" hidden>
+      <!-- Progressive-enhancement fallback: with JS disabled, the interactive
+           scanner (tabs, dropzones, Run button) is hidden by the <noscript>
+           style rule in <head>. This block replaces it with a static, readable
+           description + a link to the vetlock README so JS-off visitors get
+           real information instead of a dead-looking UI. The `.scan-noscript`
+           styling already lives in design/scan.css §7. -->
+      <noscript>
+        <div class="scan-noscript" role="note">
+          <div class="scan-noscript-inner">
+            <h3>Try vetlock — requires JavaScript</h3>
+            <p>
+              The in-browser scanner needs JavaScript to read your lockfile locally
+              and dispatch a GitHub Actions workflow. With scripting disabled it
+              stays hidden so nothing pretends to be interactive.
+            </p>
+            <p>
+              You can still run the exact same scan from your terminal:
+              <code>npx vetlock diff package-lock.before.json package-lock.after.json</code>.
+              Single-lockfile capability profile lands with vetlock 0.4.
+            </p>
+            <p>
+              Learn more:
+              <a href="https://github.com/OJ-Uday/vetlock" rel="noopener">github.com/OJ-Uday/vetlock ↗</a>
+              (README, replay corpus, and the 12/13 real-attack benchmark).
+            </p>
           </div>
-          <div class="dropzone" id="dz-after" data-slot="after" data-label="after" tabindex="0"
-               role="button" aria-label="Drop package-lock.after.json or click to select">
-            <div class="dz-label mono">package-lock.<span class="accent">after</span>.json</div>
-            <div class="dz-hint">drop file · or click to select</div>
+        </div>
+      </noscript>
+
+      <div class="scan-wrap">
+        <!-- P3 a11y: off-screen polite live region for clipboard/share announcements.
+             wireCopyBtn, copyShareLink, and copyCli all mutate a button's textContent
+             to "Copied" on success, but a name change on the activated button is not
+             spoken by NVDA/JAWS/VO. Writing the success/error message into this region
+             gives screen-reader users aural feedback that the clipboard write worked
+             (or that it was blocked). -->
+        <span id="scan-copy-live" class="sr-only" role="status" aria-live="polite"></span>
+
+        <!-- P3: permalink read-only banner. Empty by default; app.js's
+             enterReadOnlyMode() unhides this + swaps in the shared-scan
+             timestamp when ?scan=<id> is present in the URL. Populated
+             at boot from a static shell so screen readers see the region
+             immediately when a share link is opened. -->
+        <div id="scan-readonly-banner" class="scan-readonly-banner mono" role="status" hidden>
+          <span class="srb-msg">Viewing a shared scan result.</span>
+          <button type="button" class="btn small" id="srb-new" data-evt="scan.new">Try your own scan</button>
+          <button type="button" class="btn small ghost" id="srb-copy" data-evt="scan.share">Copy link</button>
+        </div>
+
+        <!-- P3 no-JS fallback for shared-scan permalinks. With JS off we cannot
+             read location.search to unhide #scan-readonly-banner, so a visitor
+             hitting /?scan=<id> would otherwise see nothing scan-specific. This
+             <noscript> block acknowledges the permalink case and surfaces the
+             Worker's raw JSON URL pattern so the shared result stays retrievable
+             even without scripting. -->
+        <noscript>
+          <div class="scan-readonly-banner mono" role="status">
+            <span class="srb-msg">
+              Shared scan permalinks (<code>?scan=&lt;id&gt;</code>) require JavaScript to render.
+              You can fetch the raw JSON directly at
+              <a href="https://vetlock-scan.oj-uday.workers.dev/scan/">https://vetlock-scan.oj-uday.workers.dev/scan/&lt;id&gt;</a>.
+            </span>
+          </div>
+        </noscript>
+
+        <!-- P3: mode tabs. Default is diff (matches the existing UX +
+             vetlock v0.3.0 which is diff-only). The profile tab is
+             visible but its Run button stays disabled until vetlock 0.4
+             ships single-artifact scanning; the copy in the profile
+             dropzone explains this. -->
+        <div id="scan-mode" class="scan-mode" role="tablist" aria-label="Scan mode">
+          <button role="tab" id="tab-profile" data-scan-mode="profile"
+                  aria-selected="true" aria-controls="panel-profile" tabindex="0"
+                  class="scan-mode-tab is-active">Capability profile
+            <span class="scan-mode-sub">single artifact</span>
+          </button>
+          <button role="tab" id="tab-diff" data-scan-mode="diff"
+                  aria-selected="false" aria-controls="panel-diff" tabindex="-1"
+                  class="scan-mode-tab">Diff
+            <span class="scan-mode-sub">before → after</span>
+          </button>
+        </div>
+
+        <!-- Profile mode: single-artifact dropzone. Visible by default (profile
+             is the active tab per packet §6.1); app.js.setMode("diff") toggles hidden. -->
+        <div id="panel-profile" role="tabpanel" aria-labelledby="tab-profile">
+          <p class="scan-demo-banner mono" role="note"
+             aria-label="Capability profile is demo-only until vetlock 0.4">
+            <strong>Demo only.</strong> Capability profile runs against bundled fixtures until
+            vetlock 0.4 lands. Use <em>Try malicious</em> / <em>Try benign</em> below —
+            your own lockfiles won't leave this browser.
+          </p>
+          <div class="dropzone" id="dz-single" data-slot="single" tabindex="0"
+               role="button" aria-label="Drop a lockfile for capability profile">
+            <div class="dz-label mono">Drop a lockfile</div>
+            <div class="dz-hint">package-lock.json · yarn.lock · pnpm-lock.yaml ·
+                                 requirements.txt · poetry.lock · pyproject.toml</div>
             <div class="dz-meta mono" hidden></div>
-            <input type="file" accept=".json,application/json" hidden>
+            <input type="file"
+                   accept=".json,.lock,.yaml,.yml,.toml,.txt,application/json,text/plain"
+                   aria-label="Lockfile for capability profile" hidden>
+          </div>
+        </div>
+
+        <!-- Diff mode: existing before/after dropzones. Wraps the historic
+             .scan-inputs unchanged so all diff-mode plumbing keeps working.
+             Hidden by default — profile is the active tab per packet §6.1. -->
+        <div id="panel-diff" role="tabpanel" aria-labelledby="tab-diff" hidden>
+          <div class="scan-inputs">
+            <div class="dropzone" id="dz-before" data-slot="before" data-label="before" tabindex="0"
+                 role="button" aria-label="Drop package-lock.before.json or click to select">
+              <div class="dz-label mono">package-lock.<span class="accent">before</span>.json</div>
+              <div class="dz-hint">drop file · or click to select</div>
+              <div class="dz-meta mono" hidden></div>
+              <input type="file" accept=".json,application/json" hidden>
+            </div>
+            <div class="dropzone" id="dz-after" data-slot="after" data-label="after" tabindex="0"
+                 role="button" aria-label="Drop package-lock.after.json or click to select">
+              <div class="dz-label mono">package-lock.<span class="accent">after</span>.json</div>
+              <div class="dz-hint">drop file · or click to select</div>
+              <div class="dz-meta mono" hidden></div>
+              <input type="file" accept=".json,application/json" hidden>
+            </div>
           </div>
         </div>
 
@@ -201,6 +347,11 @@
             <div class="sr-meta mono" id="sr-meta">0 findings · 0 packages · 0ms</div>
             <button class="btn small ghost" id="sr-copy" data-evt="scan.copy">Copy JSON</button>
           </div>
+          <!-- P3 mobile disclosure: the per-severity <details class="sr-group">
+               groups app.js emits into #sr-body already collapse to just their
+               summary on <=480px (scan.css §5) and force-open on wider screens.
+               An outer wrapper would double-wrap the disclosure and force users
+               to tap twice on mobile, so #sr-body is written to directly. -->
           <div class="sr-body" id="sr-body"></div>
           <div class="sr-foot mono">
             Runs <a href="https://github.com/OJ-Uday/vetlock/releases/tag/v0.3.0" data-evt="scan.version">vetlock v0.3.0</a>
@@ -411,7 +562,7 @@
     </table>
   </dialog>
 
-  <script src="app.js"></script>
+  <script src="app.js" defer></script>
   <script type="module">import init from '/design/theme.js'; init();</script>
   <script type="module">
     // Hero boot — poster ships in the DOM as the LCP element and remains

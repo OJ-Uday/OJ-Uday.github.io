@@ -23,6 +23,9 @@ jobs:
       - name: Color token gate
         run: npm run gate:colors
 
+      - name: Perf budget gate
+        run: npm run gate:perf
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 

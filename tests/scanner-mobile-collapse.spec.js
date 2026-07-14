@@ -94,6 +94,11 @@ test.describe('scanner mobile collapse', () => {
     await mockScanBackend(page);
     await page.goto('/');
 
+    // P3 introduced a mode-tabs UI with "Capability profile" as default;
+    // this test drives the diff flow (before/after example fixtures), so
+    // switch to the diff tab first.
+    await page.locator('#tab-diff').click();
+
     // Seed the scanner with the malicious corpus example — that path goes
     // through dispatchScan()/pollUntilReady() so we exercise the real flow.
     // "Try malicious (Shai-Hulud fixture)" is the visible label.
@@ -157,6 +162,10 @@ test.describe('scanner mobile collapse', () => {
     const page = await ctx.newPage();
     await mockScanBackend(page);
     await page.goto('/');
+
+    // P3 mode-tabs UI: default is "Capability profile"; this test uses the
+    // diff-mode example seed path, so switch tabs first.
+    await page.locator('#tab-diff').click();
 
     await page.locator('#scan-example').click();
     await expect(page.locator('#scan-run')).toBeEnabled();

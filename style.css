@@ -30,6 +30,20 @@ kbd { font-family: var(--mono); font-size: 0.8em; background: var(--panel-2); co
 }
 .skip:focus { left: 0; }
 
+/* Visually hidden but exposed to assistive tech — used for aria-live status regions
+   (e.g. copy-to-clipboard success/error announcements) that must not affect layout. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 main { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 section { padding: 64px 0 12px; }
 
@@ -76,6 +90,17 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
 .btn.ghost { background: transparent; color: var(--text); border-color: var(--line-strong); }
 .btn.ghost:hover { border-color: var(--accent); color: var(--accent); background: transparent; box-shadow: none; }
 .btn.small { padding: 6px 14px; font-size: 0.85rem; }
+/* Mobile tap target: every .btn.small inside the scanner is a one-handed
+   thumb target on 375-wide phones (Copy JSON, Copy link, Try your own scan,
+   Retry, and the dynamically-injected #sr-share / #sr-cli-copy). Bare
+   .btn.small renders ~28px tall which fails WCAG 2.5.5 AAA (44x44 CSS px)
+   and Apple HIG. Scope the bump to .scan-wrap so we don't inflate every
+   small button sitewide — this also picks up #scan-readonly-banner since
+   the banner lives inside .scan-wrap in index.html. */
+.scan-wrap .btn.small {
+  min-height: 44px;
+  padding: max(8px, var(--space-2)) var(--space-3);
+}
 .btn.danger { color: var(--danger); border-color: var(--danger-dim); }
 .btn.danger:hover { color: var(--danger); border-color: var(--danger); }
 
@@ -85,58 +110,20 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
   min-height: 78vh; padding-top: 48px;
 }
 .kicker { color: var(--accent); font-family: var(--mono); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: lowercase; margin: 0; }
-.release-chip {
-  margin: 14px 0 0; color: var(--muted); text-decoration: none;
-  transition: border-color 0.15s, color 0.15s;
-}
-.release-chip:hover { border-color: var(--accent); color: var(--text); text-decoration: none; }
-.release-dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
 .lede { color: var(--muted); font-size: 1.08rem; max-width: 34em; }
 .lede strong { color: var(--text); }
 .lede em { color: var(--accent); font-style: normal; }
 .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
 
 /* ── console panel ──────────────────────────────────────────────────── */
-.console-col {
-  /* Wraps the disclaimer + noscript fallback + console so the hero grid
-     treats them as a single column. Small gap so the disclaimer reads as a
-     caption above the panel, not as a separate stacked card. */
-  display: flex; flex-direction: column; gap: var(--space-2);
-}
-.console-disclaimer {
-  /* Engineer-voice caption above the live panel — placed here (not in
-     .console-foot) so the reader sees the promise before the animating
-     feed. Uses fluid caption scale + muted text token for a neutral, low-
-     weight tone that matches the panel aesthetic. */
-  margin: 0;
-  font-size: var(--fs-caption);
-  color: var(--color-text-muted);
-  letter-spacing: var(--tracking-wide);
-}
-.console-nojs {
-  /* Rendered only when JS is disabled (via <noscript>). Explains why the
-     empty live panel is hidden and points at the source. Styled as a small
-     muted note that fits the space the console would occupy. */
-  margin: 0;
-  padding: var(--space-4);
-  background: var(--color-surface-raised);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  font-size: var(--fs-caption);
-  color: var(--color-text-muted);
-}
-.console-nojs a { color: var(--color-accent); }
 .console {
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
   overflow: hidden; box-shadow: var(--shadow);
   position: relative;
-  /* Reserve the panel's final box on first paint. Without this, Lighthouse's
-     mobile emulation (4x CPU + slow-4G) measures a ~380px downward shift as
-     .hero-copy resolves its height under the render-blocking stylesheet chain,
-     pushing CLS from 0.000 → 0.470. The value covers .console-bar (~40px) +
-     .feed (--feed-height, 260/220px on wide/narrow) + .console-foot (~28px) +
-     borders. `contain: layout` isolates the panel from parent reflows so a
-     future change upstream can't reintroduce the shift. */
+  /* Reserve the panel's final box on first paint (P1 CLS fix). Without this,
+     Lighthouse's mobile emulation measures a ~380px downward shift as
+     .hero-copy resolves its height under the render-blocking stylesheet chain.
+     `contain: layout` isolates future parent reflows. */
   min-height: 303px;
   contain: layout;
 }
@@ -178,165 +165,24 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
 .feed.json .evt { display: block; white-space: pre; color: var(--muted); }
 .feed.json .evt::before { content: attr(data-json); color: inherit; }
 .feed.json .evt > * { display: none; }
-/* Terminal cursor: a blinking caret glued to the end of the newest feed row.
-   `.evt:last-child` always tracks the newest event — emit() appends new
-   rows and only ever trims from the front — so the caret "walks" down the
-   feed exactly like a real TTY prompt sitting at the end of the last line.
-   ::after works as a genuine flex item here (last-child's display:flex),
-   and separately as trailing content after the JSON-mode ::before text, so
-   one rule covers both render modes. */
-.feed .evt:last-child::after {
-  content: "";
-  display: inline-block;
-  width: 7px;
-  height: 1em;
-  margin-left: 1px;
-  background: var(--accent);
-  vertical-align: -2px;
-  animation: caret-blink 1s step-end infinite;
-}
-@keyframes caret-blink { 50% { opacity: 0; } }
 .console-foot { padding: 8px 14px; border-top: 1px solid var(--line); font-size: 0.72rem; color: var(--muted); }
 
 /* ── vetlock scanner ────────────────────────────────────────────────── */
-.scan-lede { color: var(--muted); max-width: 62ch; margin: 0 0 24px; font-size: 1.02rem; }
-.scan-lede code { color: var(--text); }
-.scan-lede em { font-style: normal; color: var(--accent); }
-.scan-wrap {
-  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
-  padding: 24px; box-shadow: var(--shadow); position: relative; overflow: hidden;
-}
-.scan-wrap::before {
-  content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: radial-gradient(circle at 100% 0%, var(--accent-dim), transparent 55%);
-  opacity: 0.6;
-}
-.scan-wrap > * { position: relative; }
+/* The scanner section (#scan) sits well below the fold and its structural
+   CSS previously lived here — the .scan-wrap card, .dropzone, .sp-* progress
+   bar, .sr-* result panel, .se-* error panel, and .fr-* finding rows. They
+   were moved into /design/scan.css as part of the P3 LCP fix so the deferred
+   stylesheet carries their bytes instead of style.css, which is render-
+   blocking and delays first paint of the hero. See docs/BUDGETS.md for the
+   measured impact. Any NEW scanner-only selector should be added to
+   scan.css, never here. */
 
-.scan-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
-
-.dropzone {
-  display: flex; flex-direction: column; align-items: stretch; justify-content: center;
-  min-height: 110px; padding: 18px;
-  background: var(--panel-2); border: 2px dashed var(--line-strong); border-radius: var(--radius);
-  cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.15s;
-  text-align: left;
-}
-.dropzone:hover, .dropzone:focus-visible { border-color: var(--accent); background: var(--panel-3); outline: none; }
-.dropzone.dragging { border-color: var(--accent); background: var(--accent-dim); transform: scale(1.01); }
-.dropzone.filled { border-color: var(--accent); border-style: solid; background: var(--panel-3); }
-.dropzone.filled .dz-hint { display: none; }
-.dropzone.error { border-color: var(--danger); background: var(--danger-dim); }
-.dz-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.02em; }
-.dz-label .accent { color: var(--accent); }
-.dz-hint { font-size: 0.82rem; color: var(--dim); }
-.dz-meta { font-size: 0.78rem; color: var(--accent); display: flex; flex-direction: column; gap: 2px; }
-.dz-meta.warn { color: var(--warn); }
-
-.scan-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
-
-/* ── scanner progress bar ───────────────────────────────────────────── */
-.scan-progress {
-  background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
-  padding: 18px; margin-bottom: 18px;
-}
-.sp-bar { height: 4px; background: var(--panel-3); border-radius: 999px; overflow: hidden; margin-bottom: 14px; }
-.sp-fill {
-  height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2));
-  transition: width 0.5s ease;
-  box-shadow: 0 0 12px var(--accent-glow);
-}
-.sp-stages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-.sp-stages li { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--dim); font-family: var(--mono); }
-.sp-num { width: 20px; height: 20px; border-radius: 50%; background: var(--panel-3); color: var(--dim); font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: 700; border: 1px solid var(--line); }
-.sp-stages li.active { color: var(--accent); }
-.sp-stages li.active .sp-num { background: var(--accent); color: var(--color-on-accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
-.sp-stages li.done { color: var(--muted); }
-.sp-stages li.done .sp-num { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-dim); }
-.sp-stages li.done .sp-num::before { content: "✓"; }
-.sp-stages li.done .sp-num-text { display: none; }
-.sp-note { font-size: 0.78rem; color: var(--muted); margin: 14px 0 0; }
-.sp-note .sp-msg { color: var(--accent); margin-left: 8px; }
-
-/* ── scanner result ─────────────────────────────────────────────────── */
-.scan-result { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
-.sr-head { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); background: var(--panel-3); }
-.sr-verdict {
-  font-family: var(--mono); font-weight: 700; font-size: 0.85rem; padding: 4px 12px; border-radius: 6px;
-  letter-spacing: 0.08em;
-}
-.sr-verdict.BLOCK { color: var(--danger); background: var(--danger-dim); }
-.sr-verdict.WARN { color: var(--warn); background: var(--warn-dim); }
-.sr-verdict.INFO { color: var(--info); background: var(--info-dim); }
-.sr-verdict.CLEAN { color: var(--success); background: var(--success-dim); }
-.sr-meta { color: var(--muted); font-size: 0.85rem; }
-.sr-head .btn { margin-left: auto; }
-.sr-body { padding: 18px; max-height: 500px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
-.sr-body::-webkit-scrollbar { width: 8px; }
-.sr-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
-.sr-body::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
-
-/* Mobile-collapse wrapper. Wide viewports: <details> is always open and the
-   <summary> chip is hidden — the full report renders exactly as before.
-   Narrow (<=480px): app.js renders <details> closed; the chip below is the
-   only visible thing until the user taps it. Native <details> gives us
-   keyboard toggle (Enter/Space) + focusable summary + accessible expanded
-   state with zero JS and zero aria juggling. */
-.sr-details { display: block; }
-.sr-details > summary { display: none; }
-.sr-details > summary::-webkit-details-marker { display: none; }
-.sr-details > summary::marker { content: ""; }
-
-.sr-empty { text-align: center; padding: 30px 16px; color: var(--muted); }
-.sr-empty .sr-emoji { font-size: 2rem; display: block; margin-bottom: 8px; }
-
-.sr-group { margin-bottom: 22px; }
-.sr-group:last-child { margin-bottom: 0; }
-.sr-group-h { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 10px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; }
-.sr-group-h.BLOCK { color: var(--danger); background: var(--danger-dim); }
-.sr-group-h.WARN { color: var(--warn); background: var(--warn-dim); }
-.sr-group-h.INFO { color: var(--info); background: var(--info-dim); }
-.sr-pkg { padding-left: 12px; border-left: 1px solid var(--line); margin-bottom: 12px; }
-.sr-pkg-h { font-weight: 600; margin: 0 0 4px; font-size: 0.95rem; }
-.sr-pkg-h .arrow { color: var(--muted); font-family: var(--mono); font-size: 0.85rem; margin: 0 6px; }
-.sr-pkg-h .from { color: var(--muted); font-family: var(--mono); font-size: 0.85rem; }
-.sr-pkg-h .to { color: var(--accent); font-family: var(--mono); font-size: 0.85rem; }
-.sr-prov { color: var(--muted); font-family: var(--mono); font-size: 0.78rem; margin: 0 0 8px; }
-.sr-prov .sep { color: var(--dim); margin: 0 4px; }
-
-.finding-row {
-  padding: 8px 0 8px 12px; margin: 0 0 6px;
-  border-left: 3px solid transparent;
-  font-size: 0.9rem;
-}
-.finding-row.BLOCK { border-left-color: var(--danger); }
-.finding-row.WARN { border-left-color: var(--warn); }
-.finding-row.INFO { border-left-color: var(--info); }
-.fr-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.fr-detector { font-family: var(--mono); font-weight: 600; color: var(--text); }
-.fr-cat { font-family: var(--mono); font-size: 0.7rem; padding: 1px 8px; border-radius: 999px; letter-spacing: 0.05em; }
-.fr-cat.NET, .fr-cat.INSTALL, .fr-cat.EXEC, .fr-cat.FS, .fr-cat.ENV, .fr-cat.INTEG { color: var(--danger); background: var(--danger-dim); }
-.fr-cat.OBF, .fr-cat.CODE, .fr-cat.META, .fr-cat.DEPS { color: var(--warn); background: var(--warn-dim); }
-.fr-msg { color: var(--muted); font-size: 0.88rem; margin: 4px 0 0; }
-.fr-evidence { font-family: var(--mono); font-size: 0.78rem; color: var(--dim); margin: 6px 0 0; padding: 6px 10px; background: var(--panel-3); border-radius: 6px; overflow-x: auto; }
-.fr-evidence .ev-loc { color: var(--muted); margin-right: 10px; }
-.fr-evidence .ev-snip { color: var(--text); }
-
-.sr-foot { padding: 12px 18px; border-top: 1px solid var(--line); font-size: 0.78rem; color: var(--muted); background: var(--panel-3); }
-.sr-foot code { color: var(--accent); }
-
-/* ── scanner error ──────────────────────────────────────────────────── */
-.scan-error {
-  padding: 16px 18px; border-radius: var(--radius); background: var(--danger-dim); border: 1px solid var(--danger);
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-}
-.se-title { color: var(--danger); font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase; }
-.se-msg { color: var(--text); flex: 1 1 200px; font-size: 0.92rem; }
-.scan-error .btn { flex: 0 0 auto; }
-
-/* Any explicit `display:` value beats the browser default `[hidden] { display: none }`,
-   so a JS-set element.hidden = true has no effect on .scan-error, .btn, .scan-progress,
-   .scan-result, or .dz-meta unless we re-establish it here. */
+/* Any explicit `display:` value beats the browser default
+   `[hidden] { display: none }`, so a JS-set element.hidden = true has no
+   effect on .scan-error, .btn, .scan-progress, .scan-result, or .dz-meta
+   unless we re-establish it here. Kept in style.css (render-blocking) so
+   any element with the `hidden` attribute is hidden on first paint —
+   including scan panels — without waiting for the deferred scan.css. */
 [hidden] { display: none !important; }
 
 /* ── stats ──────────────────────────────────────────────────────────── */
@@ -401,15 +247,8 @@ a.card:hover { text-decoration: none; }
 
 /* ── writing ────────────────────────────────────────────────────────── */
 .writing { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.writing li { display: block; }
 .writing a { font-weight: 600; }
-.writing-teaser {
-  font: var(--fs-caption)/var(--lh-body) var(--font-sans);
-  color: var(--color-text-muted);
-  margin-top: var(--space-2);
-  margin-bottom: 0;
-  max-width: 60em;
-}
+.writing span { color: var(--muted); font-size: 0.94rem; }
 
 /* ── contact / footer ───────────────────────────────────────────────── */
 .contact-lede { color: var(--muted); max-width: 40em; }
@@ -438,7 +277,6 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .dot, .pulse, .tag-dot { animation: none; }
-  .feed .evt:last-child::after { animation: none; }
   .btn, .card, .stat, .sp-fill, .dropzone { transition: none; }
   .console::before { display: none; }
 }
@@ -450,62 +288,22 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
   main { padding: 0 16px; }
   section { padding: 48px 0 8px; }
 }
+@media (max-width: 480px) {
+  /* (scanner-only overrides for narrow viewports moved to design/scan.css) */
+}
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; min-height: 0; gap: 28px; }
-  /* Reserve .hero-copy's final rendered height so late CSS resolution
-     (fluid clamp() type + backdrop-blur nav + our render-blocking token
-     chain) doesn't push .console-col down after first paint. The value
-     covers kicker + fluid H1 (two lines at mobile scale) + lede paragraph
-     + CTA row on a 412px viewport. Diagnosed via Lighthouse's
-     layout-shifts audit — the entire CLS 0.470 comes from a single
-     downward shift of .console once .hero-copy resolves. */
+  /* Reserve .hero-copy's final rendered height on mobile so late CSS
+     resolution doesn't push .console-col down after first paint (P1 CLS
+     fix — covers kicker + fluid H1 + lede + CTA row at mobile scale). */
   .hero-copy { min-height: 520px; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .cards, .cards.grid2 { grid-template-columns: 1fr; }
   .feed { height: 220px; }
-  .console { min-height: 260px; }  /* narrower panel + smaller feed = smaller reserved slot */
+  .console { min-height: 260px; }  /* narrower panel + smaller feed */
   .skill-row { grid-template-columns: 1fr; gap: 4px; }
   .t-date { margin-left: 0; width: 100%; }
-  .scan-inputs { grid-template-columns: 1fr; }
-  .sp-stages { grid-template-columns: 1fr; gap: 10px; }
-  .sp-stages li { justify-content: flex-start; }
-}
-@media (max-width: 480px) {
-  /* Header row: allow the pill, meta line, and Copy button to wrap so a
-     wide meta string doesn't push the button off-screen. */
-  .sr-head { flex-wrap: wrap; gap: 10px; }
-  .sr-head .btn { margin-left: 0; }
-  /* Reveal the collapsed summary chip that CSS hides on wide screens. When
-     <details> is closed the chip is the ONLY visible child of .sr-body, so
-     the panel reads as "verdict + count · tap to expand". */
-  .sr-details > summary {
-    display: block;
-    cursor: pointer;
-    padding: 10px 14px;
-    background: var(--panel-3);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    font-size: 0.85rem;
-    color: var(--accent);
-    letter-spacing: 0.02em;
-    user-select: none;
-  }
-  .sr-details > summary:hover {
-    background: var(--accent-dim);
-    border-color: var(--accent);
-  }
-  .sr-details > summary:focus-visible {
-    background: var(--accent-dim);
-    border-color: var(--accent);
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
-  }
-  /* When expanded on mobile, gap between the summary chip and the first
-     severity group. */
-  .sr-details[open] > summary { margin-bottom: 14px; }
-  /* Drop the internal scroll region on mobile — the whole page scrolls
-     naturally instead of a nested 500px box. */
-  .sr-body { max-height: none; padding: 14px; }
+  /* (scanner grid overrides moved to design/scan.css) */
 }
 
 /* ── print ──────────────────────────────────────────────────────────── */

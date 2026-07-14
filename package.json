@@ -19,8 +19,9 @@
     "gate:colors": "node scripts/no-hardcoded-colors.mjs",
     "gate:budgets": "node scripts/measure-baseline.mjs",
     "gate:budgets:ci": "node scripts/measure-baseline.mjs --strict",
+    "gate:perf": "node scripts/gate-perf.mjs",
     "serve": "python3 -m http.server 4173 --bind 127.0.0.1",
-    "check": "npm run gate:colors && npm run test"
+    "check": "npm run gate:colors && npm run gate:budgets:ci && npm run test"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
