@@ -85,6 +85,12 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
   min-height: 78vh; padding-top: 48px;
 }
 .kicker { color: var(--accent); font-family: var(--mono); font-size: 0.85rem; letter-spacing: 0.06em; text-transform: lowercase; margin: 0; }
+.release-chip {
+  margin: 14px 0 0; color: var(--muted); text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+.release-chip:hover { border-color: var(--accent); color: var(--text); text-decoration: none; }
+.release-dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
 .lede { color: var(--muted); font-size: 1.08rem; max-width: 34em; }
 .lede strong { color: var(--text); }
 .lede em { color: var(--accent); font-style: normal; }
@@ -134,6 +140,24 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
 .feed.json .evt { display: block; white-space: pre; color: var(--muted); }
 .feed.json .evt::before { content: attr(data-json); color: inherit; }
 .feed.json .evt > * { display: none; }
+/* Terminal cursor: a blinking caret glued to the end of the newest feed row.
+   `.evt:last-child` always tracks the newest event — emit() appends new
+   rows and only ever trims from the front — so the caret "walks" down the
+   feed exactly like a real TTY prompt sitting at the end of the last line.
+   ::after works as a genuine flex item here (last-child's display:flex),
+   and separately as trailing content after the JSON-mode ::before text, so
+   one rule covers both render modes. */
+.feed .evt:last-child::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  margin-left: 1px;
+  background: var(--accent);
+  vertical-align: -2px;
+  animation: caret-blink 1s step-end infinite;
+}
+@keyframes caret-blink { 50% { opacity: 0; } }
 .console-foot { padding: 8px 14px; border-top: 1px solid var(--line); font-size: 0.72rem; color: var(--muted); }
 
 /* ── vetlock scanner ────────────────────────────────────────────────── */
@@ -206,7 +230,7 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
 .sr-verdict.BLOCK { color: var(--danger); background: var(--danger-dim); }
 .sr-verdict.WARN { color: var(--warn); background: var(--warn-dim); }
 .sr-verdict.INFO { color: var(--info); background: var(--info-dim); }
-.sr-verdict.CLEAN { color: var(--accent); background: var(--accent-dim); }
+.sr-verdict.CLEAN { color: var(--success); background: var(--success-dim); }
 .sr-meta { color: var(--muted); font-size: 0.85rem; }
 .sr-head .btn { margin-left: auto; }
 .sr-body { padding: 18px; max-height: 500px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
@@ -358,6 +382,7 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; transition: none; }
   .dot, .pulse, .tag-dot { animation: none; }
+  .feed .evt:last-child::after { animation: none; }
   .btn, .card, .stat, .sp-fill, .dropzone { transition: none; }
   .console::before { display: none; }
 }

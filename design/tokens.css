@@ -217,6 +217,16 @@
   --color-info:            var(--cyan-300);
   --color-info-soft:       var(--alpha-cyan-14);
   --color-link:            var(--blue-300);
+  /* "success" is its own severity token (CLEAN verdicts, "closed" states),
+     distinct from --color-accent (brand identity). It currently resolves to
+     the same teal — same pixels — but gives finding-severity CSS a name that
+     isn't overloaded with "this is the brand color" the way --accent is.
+     Declared once here (not re-declared per theme): since it derives via
+     var(--color-accent), it re-resolves correctly under both the explicit
+     light override below and the prefers-color-scheme block, exactly like
+     the legacy --accent shim already does. */
+  --color-success:         var(--color-accent);
+  --color-success-soft:    var(--color-accent-soft);
 
   --color-shadow:          0 20px 60px var(--alpha-black-35);
   --color-shadow-hover:    0 24px 72px var(--alpha-black-50);
@@ -265,6 +275,8 @@
   --warn-dim:      var(--color-warn-soft);
   --info:          var(--color-info);
   --info-dim:      var(--color-info-soft);
+  --success:       var(--color-success);
+  --success-dim:   var(--color-success-soft);
   --mono:          var(--font-mono);
   --sans:          var(--font-sans);
   --radius:        12px;

@@ -23,8 +23,12 @@
   <meta property="og:description" content="I build systems that watch systems. Telemetry SDK → ClickHouse analytics → zero-touch delivery, plus vetlock — behavioral supply-chain scanning for npm.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://oj-uday.github.io/">
-  <meta property="og:image" content="https://github.com/OJ-Uday.png">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://oj-uday.github.io/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="uday.ojha — I build systems that watch systems.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://oj-uday.github.io/og-image.png">
   <meta name="color-scheme" content="dark light">
   <!-- Favicon: shared asset (single source, reused by /styleguide/). Was previously an inline data URL that
        duplicated the same hardcoded brand hexes on both pages; centralizing here makes a retheme a one-file edit. -->
@@ -79,6 +83,9 @@
     <section class="hero" id="hero">
       <div class="hero-copy">
         <p class="kicker">Uday Ojha · software engineer · Chandigarh, IN</p>
+        <a class="tag mono release-chip" href="https://github.com/OJ-Uday/vetlock/blob/main/CHANGELOG.md" data-evt="hero.release">
+          <span class="tag-dot release-dot" aria-hidden="true"></span>Latest release: v0.4.0 · shipped 2026-07-14 · changelog →
+        </a>
         <h1>I build systems<br>that watch systems<span class="accent">.</span></h1>
         <p class="lede">
           TypeScript, Go, React — and the pipelines between them. Most recently I designed
@@ -190,7 +197,7 @@
     <!-- ───────────────────────── stats ───────────────────────── -->
     <section class="stats" aria-label="Highlights">
       <div class="stat reveal"><span class="num">12/13</span><span class="lbl">real npm supply-chain attacks caught by vetlock's replay corpus (one honest miss)</span></div>
-      <div class="stat reveal"><span class="num">31</span><span class="lbl">confirmed red-team exploits closed in vetlock v0.3.0 — six-agent adversarial review</span></div>
+      <div class="stat reveal"><span class="num">39/48</span><span class="lbl">red-team exploits closed in vetlock v0.4.0 · 92.3% detection benchmark · 424 tests passing</span></div>
       <div class="stat reveal"><span class="num">1,648</span><span class="lbl">production deploys backtested by the release-audit service</span></div>
       <div class="stat reveal"><span class="num">&lt; 15 min</span><span class="lbl">deploy lead time — down from ~1 day of manual coordination</span></div>
     </section>
@@ -206,7 +213,7 @@
             tarball, and reports <em>capability deltas</em>: new install scripts, new
             network endpoints, env-token harvest, obfuscation jumps, integrity tampering.
             <strong>12 of 13</strong> real npm supply-chain attacks caught by the replay
-            corpus. <strong>31 red-team exploits closed</strong> across a six-agent
+            corpus. <strong>39 of 48 red-team exploits closed</strong> across a six-agent
             adversarial review. Ships with a NEVER-EXECUTE canary — the analyzer never
             runs code from analyzed packages, tested every build.
           </p>
@@ -254,7 +261,7 @@
       <div class="cards grid2">
         <a class="card proj reveal accent-border" href="https://github.com/OJ-Uday/vetlock" data-evt="proj.vetlock">
           <h3 class="mono">vetlock <span class="arrow" aria-hidden="true">↗</span></h3>
-          <p>Behavioral diff for npm dependency updates — what does this update DO now that it didn't before? 17 detectors, HMAC-authed cache, Damerau-Levenshtein typosquat matching, GHSA adjacency, NEVER-EXECUTE invariant. 375 tests, 31 red-team exploits closed. <code>npx vetlock demo</code> tries it in 10 seconds.</p>
+          <p>Behavioral diff for npm dependency updates — what does this update DO now that it didn't before? 17 detectors, HMAC-authed cache, Damerau-Levenshtein typosquat matching, GHSA adjacency, NEVER-EXECUTE invariant. 424 tests, 39/48 red-team exploits closed. <code>npx vetlock demo</code> tries it in 10 seconds.</p>
           <div class="chips"><span>TypeScript</span><span>Node</span><span>SAST</span><span>Apache-2.0</span></div>
         </a>
         <a class="card proj reveal" href="https://github.com/OJ-Uday/telemetry-sdk-patterns" data-evt="proj.sdk">
@@ -320,7 +327,7 @@
     <section id="writing">
       <h2><span class="mono h-idx">05</span> Writing</h2>
       <ul class="writing">
-        <li class="reveal"><a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md" data-evt="write.redteam">The vetlock red-team review</a><span> — six adversarial agents, 35 confirmed exploits, adversarial verification with default-REFUTED. 31 closed in v0.3.0.</span></li>
+        <li class="reveal"><a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md" data-evt="write.redteam">The vetlock red-team review</a><span> — six adversarial agents, 35 confirmed exploits, adversarial verification with default-REFUTED. 39 of 48 catalogued exploits closed as of v0.4.0.</span></li>
         <li class="reveal"><a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/SECURITY-DECISIONS.md" data-evt="write.security-decisions">When correctness beats performance</a><span> — the fastest-levenshtein incident, and the principle that governs every security-boundary choice in vetlock.</span></li>
         <li class="reveal"><a href="https://github.com/OJ-Uday/telemetry-sdk-patterns/blob/main/docs/WHITEPAPER.md" data-evt="write.whitepaper">Self-building instrumentation</a><span> — why telemetry should name the UI itself, and how two-tier identity + capture-time causality make that safe.</span></li>
         <li class="reveal"><a href="https://github.com/OJ-Uday/gitops-autopilot/blob/main/docs/DESIGN.md" data-evt="write.twoid">The two-identity problem in zero-touch delivery</a><span> — the two GitHub rules that quietly break naive deploy automation, and the arrangements that survive them.</span></li>
