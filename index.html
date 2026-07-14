@@ -18,9 +18,9 @@
     Kept minified to <250 bytes so it stays cheap on the critical path.
   -->
   <script>!function(){document.documentElement.classList.add("js");try{var t=localStorage.getItem("uday.theme");(t=="dark"||t=="light")&&(document.documentElement.dataset.theme=t)}catch(e){}}();</script>
-  <meta name="description" content="Software engineer (TypeScript, Go, React, Kubernetes). I build systems that watch systems — telemetry platforms, deploy audit, and vetlock — a behavioral supply-chain scanner for npm.">
+  <meta name="description" content="Software engineer (TypeScript, Go, React, Kubernetes) — I build observability and supply-chain tooling. Home of vetlock, a behavioral supply-chain scanner for npm.">
   <meta property="og:title" content="Uday Ojha — Software Engineer">
-  <meta property="og:description" content="I build systems that watch systems. Telemetry SDK → ClickHouse analytics → zero-touch delivery, plus vetlock — behavioral supply-chain scanning for npm.">
+  <meta property="og:description" content="Software engineer (TypeScript, Go, React, Kubernetes) — I build observability and supply-chain tooling. Home of vetlock, a behavioral supply-chain scanner for npm.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://oj-uday.github.io/">
   <meta property="og:image" content="https://oj-uday.github.io/og-image.png">
@@ -33,6 +33,16 @@
   <!-- Favicon: shared asset (single source, reused by /styleguide/). Was previously an inline data URL that
        duplicated the same hardcoded brand hexes on both pages; centralizing here makes a retheme a one-file edit. -->
   <link rel="icon" href="/design/favicon.svg" type="image/svg+xml">
+  <!-- Preload the render-blocking CSS so the browser starts fetching
+       immediately while the (large, content-heavy) HTML continues to
+       stream. Without these hints Chrome will wait to discover the
+       <link rel="stylesheet"> in tree order — with the page now ~100 KB
+       of inline SVG content, discovery drifts noticeably deeper into
+       the document, delaying FCP. Same URLs as the stylesheet links
+       below; the preload just moves the network fetch earlier. -->
+  <link rel="preload" href="/design/tokens.css"     as="style">
+  <link rel="preload" href="/design/primitives.css" as="style">
+  <link rel="preload" href="style.css"              as="style">
   <link rel="stylesheet" href="/design/tokens.css">
   <link rel="stylesheet" href="/design/primitives.css">
   <link rel="stylesheet" href="/design/hero.css">
@@ -73,12 +83,37 @@
   <link rel="preload" as="style" href="/design/scan.css" onload="this.onload=null;this.rel='stylesheet'">
   <noscript><link rel="stylesheet" href="/design/scan.css"></noscript>
   <link rel="stylesheet" href="style.css">
+  <!--
+    Below-fold section stylesheets are non-render-blocking. Each section
+    is off-screen at first paint (how-it-works / systems / red-team /
+    projects), so blocking on their CSS would only inflate LCP with no
+    visual payoff. The `media="print"` trick tells the browser this is
+    a print-only sheet (so it doesn't block first paint), then the
+    onload handler flips it back to `all` and the styles apply. The
+    <noscript> fallback keeps everything render-blocking (and therefore
+    correctly styled) when JS is off — matches our progressive-enhancement
+    rule that content must be readable without JS.
+  -->
+  <link rel="stylesheet" href="/design/how-it-works.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/design/systems.css"      media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/design/red-team.css"     media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/design/projects.css"     media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="/design/how-it-works.css">
+    <link rel="stylesheet" href="/design/systems.css">
+    <link rel="stylesheet" href="/design/red-team.css">
+    <link rel="stylesheet" href="/design/projects.css">
+  </noscript>
   <!-- Theme toggle needs JS to function; hide it when scripting is off so it doesn't look interactive-but-inert.
        The .reveal override here is a belt-and-suspenders fallback: primitives.css already keeps .reveal visible
        by default and only hides it when `html.js` is present (stamped by the preflight above), so no-JS clients
        never see the pre-animation state. The <noscript> rule guarantees the same for the legacy .reveal in
        style.css, and covers the edge case where a page loads style.css without the preflight. -->
-  <noscript><style>.nav-theme-toggle{display:none}.reveal{opacity:1;transform:none}#scan-mode,#panel-diff,#panel-profile,.scan-actions,#scan-readonly-banner,#scan-progress,#scan-result,#scan-error{display:none!important}</style></noscript>
+  <!-- With JS off: hide the theme toggle (interactive-but-inert), keep .reveal content visible (no animation),
+       hide the scanner mode-tab + panel machinery (P3 — JS-driven, would render as broken skeleton), and hide
+       the #proof section entirely (P4 — every tile stays [hidden] without JS, so header+lede would promise
+       numbers we can't deliver). -->
+  <noscript><style>.nav-theme-toggle{display:none}.reveal{opacity:1;transform:none}#scan-mode,#panel-diff,#panel-profile,.scan-actions,#scan-readonly-banner,#scan-progress,#scan-result,#scan-error{display:none!important}#proof{display:none}</style></noscript>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -97,6 +132,7 @@
     <a class="brand" href="#top" data-evt="nav.brand"><span class="dot" aria-hidden="true"></span>uday.ojha</a>
     <nav aria-label="Sections">
       <a href="#scan" data-evt="nav.scan">Scan</a>
+      <a href="#how-it-works" data-evt="nav.how">How it works</a>
       <a href="#systems" data-evt="nav.systems">Systems</a>
       <a href="#projects" data-evt="nav.projects">Projects</a>
       <a href="#experience" data-evt="nav.experience">Experience</a>
@@ -148,29 +184,6 @@
         </p>
       </div>
 
-      <div class="console-col">
-        <p id="console-privacy" class="console-disclaimer mono">
-          Events render in this tab only — nothing is sent over the network.
-        </p>
-        <noscript>
-          <style>.console{display:none}</style>
-          <p class="console-nojs mono">
-            The live telemetry console is a JavaScript demo — enable scripting to see this page
-            instrument itself in real time. Source on
-            <a href="https://github.com/OJ-Uday/OJ-Uday.github.io">GitHub</a>.
-          </p>
-        </noscript>
-        <div class="console" role="region" aria-label="Live demo: this page's own telemetry" aria-describedby="console-privacy">
-          <div class="console-bar">
-            <span class="pulse" aria-hidden="true"></span>
-            <span class="console-title">live telemetry — this page instruments itself</span>
-            <span class="console-fmt mono" id="fmt-toggle" role="button" tabindex="0"
-                  aria-label="toggle event render format">human</span>
-            <span class="console-up mono" id="uptime">0s</span>
-          </div>
-          <div class="feed mono" id="feed" role="log" aria-live="off"></div>
-          <div class="console-foot mono">
-            press <kbd>?</kbd> for shortcuts
           </div>
         </div>
       </div>
@@ -223,9 +236,8 @@
         <!-- P3 a11y: off-screen polite live region for clipboard/share announcements.
              wireCopyBtn, copyShareLink, and copyCli all mutate a button's textContent
              to "Copied" on success, but a name change on the activated button is not
-             spoken by NVDA/JAWS/VO. Writing the success/error message into this region
-             gives screen-reader users aural feedback that the clipboard write worked
-             (or that it was blocked). -->
+             spoken by NVDA/JAWS/VO. Writing the success/error region gives screen-reader
+             users aural feedback that the clipboard write worked (or that it was blocked). -->
         <span id="scan-copy-live" class="sr-only" role="status" aria-live="polite"></span>
 
         <!-- P3: permalink read-only banner. Empty by default; app.js's
@@ -356,7 +368,7 @@
           <div class="sr-foot mono">
             Runs <a href="https://github.com/OJ-Uday/vetlock/releases/tag/v0.3.0" data-evt="scan.version">vetlock v0.3.0</a>
             on <a href="https://github.com/OJ-Uday/vetlock-web-scans" data-evt="scan.workflow">GitHub Actions</a>.
-            For a full offline scan: <code>npx vetlock diff before.json after.json</code>
+            For a full offline scan, see <a href="https://github.com/OJ-Uday/vetlock#readme" data-evt="scan.readme">the vetlock repo README</a>.
           </div>
         </div>
 
@@ -368,75 +380,608 @@
       </div>
     </section>
 
-    <!-- ───────────────────────── stats ───────────────────────── -->
-    <section class="stats" aria-label="Highlights">
-      <div class="stat reveal"><span class="num">12/13</span><span class="lbl">real npm supply-chain attacks caught by vetlock's replay corpus (one honest miss)</span></div>
-      <div class="stat reveal"><span class="num">39/48</span><span class="lbl">red-team exploits closed in vetlock v0.4.2 · 92.3% detection benchmark · 18% FP on routine bumps · 424 tests passing</span></div>
-      <div class="stat reveal"><span class="num">1,648</span><span class="lbl">production deploys backtested by the release-audit service</span></div>
-      <div class="stat reveal"><span class="num">&lt; 15 min</span><span class="lbl">deploy lead time — down from ~1 day of manual coordination</span></div>
+    <!-- ───────────────────────── how vetlock works ─────────────────────────
+         Six-stage scrollytelling of the pipeline. Progressive enhancement:
+         • no JS → the sticky viz column is hidden (CSS default); the six
+           stages stack vertically, each showing its own inline SVG and copy.
+         • JS + wide viewport → the sticky viz shows the currently active
+           stage's SVG frame; inline per-stage SVGs are hidden. As the user
+           scrolls, an IntersectionObserver in design/how-it-works.js swaps
+           data-active-stage on .hiw__grid and CSS reveals the matching frame.
+         • prefers-reduced-motion → the scroll-linked swap is a no-op; the
+           viz simply shows the first (or hash-linked) frame. Ambient dash
+           flow + breathing animations are disabled in the CSS.
+
+         Every color = var(--*). Every SVG is inline (no requests) so this
+         section costs zero network on first view. Copy is truthful — no
+         claim here goes beyond what the vetlock repo already documents. -->
+    <section id="how-it-works" class="hiw" aria-labelledby="hiw-title">
+      <div class="hiw__intro">
+        <h2 id="hiw-title"><span class="mono h-idx">·</span> How vetlock works</h2>
+        <p class="hiw__lede">
+          Six stages, one <em>never-execute</em> invariant. vetlock reads
+          <strong>two lockfiles</strong> — the one you shipped and the one you're about to
+          ship — and walks the dependency delta without running a single line of
+          package code. What you see below is <strong>the actual pipeline</strong>:
+          diff, changed-set, recursive fetch, detectors, provenance graph, verdict.
+        </p>
+      </div>
+
+      <div class="hiw__grid" data-active-stage="1">
+
+        <!-- ── Sticky viz column (JS + wide viewport only) ────────────────
+             The six absolute-positioned frames stacked in this viz box
+             are injected by design/how-it-works.js (kept out of the
+             initial HTML to protect first-view LCP; see LCP note there).
+             CSS still gates which frame is visible via
+             `.hiw__grid[data-active-stage="N"] .hiw__frame[data-stage="N"]`.
+             Same viewBox (320×240) across all frames so the box stays a
+             fixed size while content swaps. Copy inside each frame is
+             decorative — the load-bearing prose (with role="img" +
+             aria-label) lives in the inline .hiw__stage-svg elements in
+             the stage cards to the right, so JS-off / narrow-viewport
+             clients are unaffected. -->
+        <aside class="hiw__viz-col" aria-hidden="true">
+          <div class="hiw__viz">
+
+
+
+
+
+
+
+          </div><!-- /.hiw__viz -->
+
+          <!-- Progress pips — six dots, one per stage. Purely decorative;
+               CSS drives their lit/unlit state from data-active-stage. -->
+          <div class="hiw__pips" aria-hidden="true">
+            <span class="hiw__pip" data-pip="1"></span>
+            <span class="hiw__pip" data-pip="2"></span>
+            <span class="hiw__pip" data-pip="3"></span>
+            <span class="hiw__pip" data-pip="4"></span>
+            <span class="hiw__pip" data-pip="5"></span>
+            <span class="hiw__pip" data-pip="6"></span>
+          </div>
+        </aside>
+
+        <!-- ── Stages column (always rendered — load-bearing content) ────
+             Each <li> is a stage card with a number, title, 1-2 sentence
+             explanation, and its own inline SVG. When JS + wide viewport
+             is active, CSS hides the inline SVGs (they're redundant with
+             the sticky rail); without JS, or on narrow viewports, the
+             inline SVGs are the diagram surface. -->
+        <ol class="hiw__stages">
+
+          <li class="hiw__stage" id="hiw-stage-1" data-stage="1">
+            <span class="hiw__stage-num mono">stage 01 · diff</span>
+            <h3>Lockfile diff</h3>
+            <p>
+              Two <code>package-lock.json</code> files in, one structural delta out.
+              vetlock parses each lockfile deterministically and emits <strong>added</strong>,
+              <strong>removed</strong>, and <strong>version-changed</strong> entries — no
+              network, no code, just the tree of what actually shipped.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Diff of two package-lock.json files. Left panel labeled 'before' lists axios 1.6.2 unchanged; right panel labeled 'after' shows axios bumped to 1.7.9 and a new @scoped/util 1.0.0 entry added."><rect x="14" y="18" width="140" height="200" rx="6" class="g-node"/><rect x="166" y="18" width="140" height="200" rx="6" class="g-node"/><text x="24" y="34">before</text><text x="176" y="34">after</text><text x="28" y="52" class="n-label-sm">"lodash": "4.17.21"</text><text x="180" y="52" class="n-label-sm">"lodash": "4.17.21"</text><rect x="22" y="58" width="124" height="14" class="g-diff-del-bg"/><text x="26" y="69" class="g-diff-del">-</text><text x="34" y="69" class="n-label-sm">"axios": "1.6.2"</text><rect x="174" y="58" width="124" height="14" class="g-diff-add-bg"/><text x="178" y="69" class="g-diff-add">+</text><text x="186" y="69" class="n-label-sm">"axios": "1.7.9"</text><text x="28" y="88" class="n-label-sm">"chalk": "5.3.0"</text><text x="180" y="88" class="n-label-sm">"chalk": "5.3.0"</text><rect x="174" y="94" width="124" height="14" class="g-diff-add-bg"/><text x="178" y="105" class="g-diff-add">+</text><text x="186" y="105" class="n-label-sm">"@scoped/util": "1.0.0"</text><text x="28" y="124" class="n-label-sm">"zod": "3.22.4"</text><text x="180" y="124" class="n-label-sm">"zod": "3.23.8"</text><text x="160" y="200" class="n-callout" text-anchor="middle">two lockfiles → structural delta</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-2" data-stage="2">
+            <span class="hiw__stage-num mono">stage 02 · changed set</span>
+            <h3>Changed set</h3>
+            <p>
+              The delta collapses into a small set of <em>package@version</em> pairs to
+              investigate. Everything else in the tree is <strong>evidence of what didn't
+              move</strong> and gets skipped — a scan is only ever as expensive as the
+              change is wide.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Dependency tree with app at the top and three direct dependencies below. Two of the three — axios and @scoped/util — are highlighted as the changed set; chalk is not."><rect x="130" y="26" width="60" height="24" rx="4" class="g-node"/><text x="160" y="42" text-anchor="middle">app</text><rect x="34" y="96" width="60" height="24" rx="4" class="g-node"/><text x="64" y="112" text-anchor="middle">chalk</text><rect x="130" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="112" text-anchor="middle" class="n-callout">axios</text><rect x="226" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="256" y="112" text-anchor="middle" class="n-callout">@scoped/util</text><rect x="34" y="170" width="60" height="24" rx="4" class="g-node"/><text x="64" y="186" text-anchor="middle" class="n-label-sm">ansi</text><rect x="130" y="170" width="60" height="24" rx="4" class="g-node"/><text x="160" y="186" text-anchor="middle" class="n-label-sm">follow-redirects</text><rect x="226" y="170" width="60" height="24" rx="4" class="g-node"/><text x="256" y="186" text-anchor="middle" class="n-label-sm">?</text><path d="M160 50 L64 96" class="g-edge"/><path d="M160 50 L160 96" class="g-edge--emph"/><path d="M160 50 L256 96" class="g-edge--emph"/><path d="M64 120 L64 170" class="g-edge"/><path d="M160 120 L160 170" class="g-edge"/><path d="M256 120 L256 170" class="g-edge"/><text x="160" y="222" class="n-callout" text-anchor="middle">2 changed roots · closure not yet resolved</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-3" data-stage="3">
+            <span class="hiw__stage-num mono">stage 03 · recursive fetch</span>
+            <h3>Recursive fetch</h3>
+            <p>
+              For each changed root, vetlock walks its <strong>full transitive closure</strong>
+              via the npm registry — HMAC-authed cache in front, so a real repo scan hits the
+              network once and reuses the tarballs across every subsequent detector.
+              Nothing is executed; tarballs are only parsed.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Same dependency tree with animated flow arrows from the changed roots axios and @scoped/util down through their transitive dependencies, showing the recursive fetch walking the closure."><rect x="130" y="26" width="60" height="24" rx="4" class="g-node"/><text x="160" y="42" text-anchor="middle">app</text><rect x="34" y="96" width="60" height="24" rx="4" class="g-node"/><text x="64" y="112" text-anchor="middle">chalk</text><rect x="130" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="112" text-anchor="middle" class="n-callout">axios</text><rect x="226" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="256" y="112" text-anchor="middle" class="n-callout">@scoped/util</text><rect x="34" y="170" width="60" height="24" rx="4" class="g-node"/><text x="64" y="186" text-anchor="middle" class="n-label-sm">ansi</text><rect x="130" y="170" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="186" text-anchor="middle" class="n-label-sm n-callout">follow-redirects</text><rect x="226" y="170" width="60" height="24" rx="4" class="g-node--emph"/><text x="256" y="186" text-anchor="middle" class="n-label-sm n-callout">encode</text><path d="M160 50 L64 96" class="g-edge"/><path d="M160 50 L160 96" class="g-edge--flow"/><path d="M160 50 L256 96" class="g-edge--flow"/><path d="M64 120 L64 170" class="g-edge"/><path d="M160 120 L160 170" class="g-edge--flow"/><path d="M256 120 L256 170" class="g-edge--flow"/><text x="160" y="222" class="n-callout" text-anchor="middle">registry tarballs · HMAC-authed cache</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-4" data-stage="4">
+            <span class="hiw__stage-num mono">stage 04 · detectors</span>
+            <h3>Detectors run</h3>
+            <p>
+              <strong>Seventeen static detectors</strong> pass over each tarball: install-script
+              shape, new endpoints, env-token harvest patterns, obfuscation deltas, integrity
+              tampering, typosquat neighbors, and more. Every detector emits <em>evidence</em> —
+              file, line, capability. Never a claim without a citation.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="A single changed package (axios) fans out to six detector chips — install-script, new endpoint, env-token harvest, obfuscation delta, typosquat, integrity mismatch. Env-token harvest is marked as a BLOCK-severity finding."><rect x="130" y="20" width="60" height="24" rx="4" class="g-node"/><text x="160" y="36" text-anchor="middle">app</text><rect x="130" y="80" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="96" text-anchor="middle" class="n-callout">axios</text><path d="M160 44 L160 80" class="g-edge"/><rect x="20" y="118" width="80" height="18" rx="9" class="g-pill--warn"/><text x="60" y="130" text-anchor="middle" class="t-on-warn n-label-sm">install-script</text><rect x="110" y="118" width="80" height="18" rx="9" class="g-pill--warn"/><text x="150" y="130" text-anchor="middle" class="t-on-warn n-label-sm">new endpoint</text><rect x="200" y="118" width="100" height="18" rx="9" class="g-pill--block"/><text x="250" y="130" text-anchor="middle" class="t-on-block n-label-sm">env-token harvest</text><rect x="20" y="146" width="80" height="18" rx="9" class="g-pill"/><text x="60" y="158" text-anchor="middle" class="n-label-sm">obfuscation Δ</text><rect x="110" y="146" width="80" height="18" rx="9" class="g-pill"/><text x="150" y="158" text-anchor="middle" class="n-label-sm">typosquat</text><rect x="200" y="146" width="100" height="18" rx="9" class="g-pill"/><text x="250" y="158" text-anchor="middle" class="n-label-sm">integrity mismatch</text><path d="M160 104 L60 118" class="g-edge"/><path d="M160 104 L150 118" class="g-edge"/><path d="M160 104 L250 118" class="g-edge--warn"/><text x="160" y="200" class="n-callout" text-anchor="middle">17 detectors · static-only · no code executed</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-5" data-stage="5">
+            <span class="hiw__stage-num mono">stage 05 · provenance</span>
+            <h3>Provenance graph</h3>
+            <p>
+              Findings alone aren't enough — every node in the changed closure carries
+              its <strong>origin, integrity, and adjacency</strong>: which registry
+              published it, which signatures match, and how close it lies to a known
+              advisory or typosquat cluster. Provenance is what turns a detector hit
+              into a decision.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Dependency tree annotated with provenance labels — chalk npm-signed, axios npm-signed, @scoped/util marked as 3 days old on npm with a warning color."><rect x="130" y="20" width="60" height="24" rx="4" class="g-node"/><text x="160" y="36" text-anchor="middle">app</text><rect x="34" y="86" width="60" height="24" rx="4" class="g-node"/><text x="64" y="102" text-anchor="middle">chalk</text><rect x="130" y="86" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="102" text-anchor="middle" class="n-callout">axios</text><rect x="226" y="86" width="60" height="24" rx="4" class="g-node--warn"/><text x="256" y="102" text-anchor="middle" class="n-warn">@scoped/util</text><rect x="34" y="156" width="60" height="24" rx="4" class="g-node"/><text x="64" y="172" text-anchor="middle" class="n-label-sm">ansi</text><rect x="130" y="156" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="172" text-anchor="middle" class="n-label-sm n-callout">follow-redirects</text><rect x="226" y="156" width="60" height="24" rx="4" class="g-node--warn"/><text x="256" y="172" text-anchor="middle" class="n-label-sm n-warn">encode</text><path d="M160 44 L64 86" class="g-edge"/><path d="M160 44 L160 86" class="g-edge--emph"/><path d="M160 44 L256 86" class="g-edge--warn"/><path d="M64 110 L64 156" class="g-edge"/><path d="M160 110 L160 156" class="g-edge--emph"/><path d="M256 110 L256 156" class="g-edge--warn"/><text x="64" y="200" text-anchor="middle" class="n-label-sm">npm · signed</text><text x="160" y="200" text-anchor="middle" class="n-label-sm n-callout">npm · signed</text><text x="256" y="200" text-anchor="middle" class="n-label-sm n-warn">npm · 3d old</text><text x="160" y="222" class="n-callout" text-anchor="middle">origin, integrity, adjacency · GHSA + typosquat</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-6" data-stage="6">
+            <span class="hiw__stage-num mono">stage 06 · verdict</span>
+            <h3>Verdict</h3>
+            <p>
+              A per-package severity (<em>CLEAN</em>, <em>WARN</em>, <em>BLOCK</em>) and
+              a whole-scan exit code — enough for CI to fail the merge automatically,
+              with the evidence attached. The scan finishes with the same never-execute
+              guarantee it started with: <strong>zero package code was run</strong>.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Verdict summary — a large BLOCK pill in the center flagging @scoped/util 1.0.0 for install-script and env-token harvest, with per-package severity pills below showing CLEAN chalk, WARN axios, BLOCK util."><rect x="80" y="46" width="160" height="48" rx="24" class="g-pill--block"/><text x="160" y="76" text-anchor="middle" class="g-verdict-label t-on-block">BLOCK</text><text x="160" y="112" text-anchor="middle" class="n-callout">@scoped/util 1.0.0</text><text x="160" y="128" text-anchor="middle" class="n-label-sm">install-script + env-token harvest</text><rect x="34" y="150" width="80" height="20" rx="10" class="g-pill--clean"/><text x="74" y="163" text-anchor="middle" class="t-on-clean n-label-sm">CLEAN · chalk</text><rect x="120" y="150" width="80" height="20" rx="10" class="g-pill--warn"/><text x="160" y="163" text-anchor="middle" class="t-on-warn n-label-sm">WARN · axios</text><rect x="206" y="150" width="80" height="20" rx="10" class="g-pill--block"/><text x="246" y="163" text-anchor="middle" class="t-on-block n-label-sm">BLOCK · util</text><path d="M160 198 L160 214" class="g-edge--warn"/><path d="M155 210 L160 218 L165 210 Z" class="g-arrow--warn"/><text x="160" y="230" class="n-label-sm" text-anchor="middle">exit code · CI fails the merge</text></svg>
+          </li>
+
+        </ol>
+      </div>
     </section>
 
-    <!-- ───────────────────────── systems ───────────────────────── -->
-    <section id="systems">
-      <h2><span class="mono h-idx">01</span> Systems I've shipped</h2>
-      <div class="cards">
-        <article class="card reveal accent-border">
-          <h3>vetlock — supply-chain behavioral diff</h3>
-          <p>
-            Reads two lockfiles, fetches every changed package, safely extracts each
-            tarball, and reports <em>capability deltas</em>: new install scripts, new
-            network endpoints, env-token harvest, obfuscation jumps, integrity tampering.
-            <strong>12 of 13</strong> real npm supply-chain attacks caught by the replay
-            corpus. <strong>39 of 48 red-team exploits closed</strong> across a six-agent
-            adversarial review. Ships with a NEVER-EXECUTE canary — the analyzer never
-            runs code from analyzed packages, tested every build.
-          </p>
-          <div class="chips"><span>TypeScript</span><span>Node</span><span>SAST</span><span>CI/CD</span></div>
+    <!-- ───────────────────────── proof layer ─────────────────────────
+         Honest live signal. Each tile fetches its own data source and
+         HIDES itself on error, missing data, or below-threshold value
+         (packet rule #4). See design/proof.js.
+
+         Progressive-enhancement contract: without JS, the entire
+         section is hidden by the <noscript> style block in <head>
+         (#proof{display:none}). The tiles themselves also start
+         [hidden] and are only unhidden by proof.js when a fetch
+         resolves with a real value — so a JS-on visitor whose fetches
+         all fail sees nothing here either. Either fully render with
+         real numbers, or fully hide — never a promise without payoff. -->
+    <section id="proof" class="proof" aria-label="Live proof">
+      <div class="proof-head">
+        <h2 class="proof-h"><span class="mono h-idx">·</span> Live proof<span class="accent">.</span></h2>
+        <p class="proof-sub-lede mono">every number here is fetched, not typed. missing data hides the tile.</p>
+      </div>
+      <div class="proof-strip" role="list" aria-live="polite" aria-atomic="false">
+        <article class="proof-tile" role="listitem" data-proof="stars" hidden aria-hidden="true">
+          <div class="proof-num mono" data-proof-num></div>
+          <div class="proof-sub mono" data-proof-sub>github stars</div>
+          <div class="proof-src mono">api.github.com</div>
         </article>
-        <article class="card reveal">
-          <h3>Operational-intelligence platform</h3>
-          <p>
-            Browser SDK → Go + ClickHouse backend → React dashboard, across a federated
-            micro-frontend estate of 5+ applications. Two-tier element identity and
-            capture-time causality feed an inference engine that names the UI
-            automatically — analysts approve with one click, and a new app onboards
-            with <em>two HTML attributes, zero code changes</em>.
-          </p>
-          <div class="chips"><span>TypeScript</span><span>Go</span><span>ClickHouse</span><span>React</span></div>
+        <article class="proof-tile" role="listitem" data-proof="npm" hidden aria-hidden="true">
+          <div class="proof-num mono" data-proof-num></div>
+          <div class="proof-sub mono" data-proof-sub>npm · last week</div>
+          <div class="proof-src mono">api.npmjs.org</div>
         </article>
-        <article class="card reveal">
-          <h3>Release-audit service</h3>
-          <p>
-            A flight recorder for deploys: an append-only ledger of everything that
-            ships, joined against behavior data to diff before vs. after. Backtested
-            across 1,648 deploys and 90 days of events; its first live run caught a
-            same-day API regression at a 53% error rate — with session-level evidence
-            attached.
-          </p>
-          <div class="chips"><span>Go</span><span>ClickHouse</span><span>SQL</span></div>
+        <article class="proof-tile" role="listitem" data-proof="scans" hidden aria-hidden="true">
+          <div class="proof-num mono" data-proof-num></div>
+          <div class="proof-sub mono" data-proof-sub>site scans</div>
+          <div class="proof-src mono">vetlock-scan worker</div>
         </article>
-        <article class="card reveal">
-          <h3>Zero-touch delivery</h3>
-          <p>
-            Merge to main and walk away: CI-authored image-bump PRs, second-identity
-            approval, auto-merge landing, drift detection, pin-back rollback. The
-            generic implementation is open source below as
-            <a href="https://github.com/OJ-Uday/gitops-autopilot" data-evt="link.gitops">gitops-autopilot</a> —
-            a repo that deploys itself.
-          </p>
-          <div class="chips"><span>GitHub Actions</span><span>Kubernetes</span><span>GitOps</span></div>
+        <article class="proof-tile proof-tile--health" role="listitem" data-proof="health" hidden aria-hidden="true">
+          <div class="proof-num mono" data-proof-num>
+            <span class="proof-dot" aria-hidden="true"></span><span>online</span>
+          </div>
+          <div class="proof-sub mono" data-proof-sub>backend health</div>
+          <div class="proof-src mono">/health · Cloudflare Worker</div>
         </article>
       </div>
     </section>
 
-    <!-- ───────────────────────── projects ───────────────────────── -->
+    <!-- ───────────────────────── systems ─────────────────────────
+         Four flagship systems. vetlock stays first (public OSS proof
+         surface, links to repo). The three sanitized flagship systems
+         below it each render as: sanitized name + one-line
+         architecture-shape caption + animated inline SVG diagram +
+         one-line outcome + a footer row with repo link or a native
+         <details>/<summary> "read more" that expands the sanitized
+         narrative. See design/systems.css and design/system-*.svg.
+
+         All copy in the three flagship cards is written to pass the
+         "would this appear in a public conference talk?" test —
+         architectural shapes, order-of-magnitude ranges, and generic
+         outcomes only. No employer name, no product name, no exact
+         internal metrics, no proprietary service names. -->
+    <section id="systems">
+      <h2><span class="mono h-idx">01</span> Systems I've shipped</h2>
+      <div class="cards sys-cards">
+
+        <!-- vetlock — public OSS; no diagram here (it has a full
+             scrollytelling pipeline in #how-it-works). -->
+        <article class="card sys-card reveal accent-border">
+          <h3>vetlock &mdash; supply-chain behavioral diff</h3>
+          <p class="sys-arch">Lockfile diff &rarr; changed set &rarr; recursive fetch &rarr; detectors &rarr; verdict.</p>
+          <p class="sys-outcome">
+            Reads two lockfiles and reports <em>capability deltas</em> &mdash; new install scripts,
+            new endpoints, env-token harvest, obfuscation jumps, integrity tampering.
+            <strong>12 of 13</strong> replay-corpus fixtures caught (10 real historical + 3 synthetic; one honest miss);
+            <strong>37 of 48 red-team exploits closed</strong> across a six-agent adversarial review.
+            The analyzer never runs code from analyzed packages &mdash; NEVER-EXECUTE invariant,
+            tested every build.
+          </p>
+          <div class="sys-actions">
+            <a href="https://github.com/OJ-Uday/vetlock" data-evt="system.vetlock.repo">github.com/OJ-Uday/vetlock &nbsp;&#8599;</a>
+            <a href="#how-it-works" data-evt="system.vetlock.how">How it works &darr;</a>
+          </div>
+          <details class="sys-more">
+            <summary>Read more</summary>
+            <p>
+              Behavioral diff for npm dependency updates &mdash; what does this update <em>do</em>
+              now that it didn't before? HMAC-authed cache, Damerau-Levenshtein typosquat
+              matching, GHSA adjacency, and the NEVER-EXECUTE invariant enforced by a
+              canary that fails the build if any analyzer path would run tarball code.
+              Clone the repo and run the bundled demo fixture to see it in action.
+            </p>
+            <div class="chips">
+              <span>TypeScript</span><span>Node</span><span>SAST</span><span>CI/CD</span>
+            </div>
+          </details>
+        </article>
+
+        <!-- ─── System 1 — Operational-intelligence platform (sanitized) ─── -->
+        <article class="card sys-card reveal" data-system="ops-intel">
+          <h3>Operational-intelligence platform</h3>
+          <p class="sys-arch">Browser SDK &rarr; ingest pipeline &rarr; columnar analytics store &rarr; analyst dashboards.</p>
+
+          <div class="sys-diagram-frame">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220" role="img" aria-label="Operational-intelligence pipeline — browser SDK sends events to an ingest pipeline, which writes to a columnar analytics store, feeding analyst dashboards." class="sys-diagram sd-ops" preserveAspectRatio="xMidYMid meet" focusable="false"><title>Operational-intelligence pipeline</title> <style> .sd-ops .sd-node{fill:var(--color-surface,transparent);stroke:var(--color-border-strong,currentColor);stroke-width:1.25;}.sd-ops .sd-node--emph{fill:var(--color-accent-soft,transparent);stroke:var(--color-accent,currentColor);stroke-width:1.5;}.sd-ops .sd-title{fill:currentColor;font-family:var(--font-mono,ui-monospace,SFMono-Regular,monospace);font-size:15px;font-weight:600;text-anchor:middle;letter-spacing:0.02em;}.sd-ops .sd-cap{fill:var(--color-text-muted,currentColor);font-family:var(--font-sans,system-ui,sans-serif);font-size:11px;text-anchor:middle;}.sd-ops .sd-flow{fill:none;stroke:var(--color-accent,currentColor);stroke-width:2;stroke-linecap:round;stroke-dasharray:6 8;animation:sd-flow-ops 1.6s linear infinite;}.sd-ops .sd-arrow{fill:var(--color-accent,currentColor);}@keyframes sd-flow-ops{to{stroke-dashoffset:-28;}}@media (prefers-reduced-motion:reduce){.sd-ops .sd-flow{animation:none;stroke-dasharray:0;}}</style> <defs><marker id="sd-ops-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="sd-arrow"/></marker></defs><rect class="sd-node--emph" x="20" y="60" width="150" height="80" rx="10"/><text class="sd-title" x="95" y="95">SDK</text><text class="sd-cap" x="95" y="115">Auto-labels UI</text><text class="sd-cap" x="95" y="128">events at capture.</text><line class="sd-flow" x1="170" y1="100" x2="216" y2="100" marker-end="url(#sd-ops-arrow)"/><rect class="sd-node" x="220" y="60" width="150" height="80" rx="10"/><text class="sd-title" x="295" y="95">Ingest</text><text class="sd-cap" x="295" y="115">Normalize. Enrich.</text><text class="sd-cap" x="295" y="128">Dedupe.</text><line class="sd-flow" x1="370" y1="100" x2="416" y2="100" marker-end="url(#sd-ops-arrow)"/><rect class="sd-node" x="420" y="60" width="150" height="80" rx="10"/><text class="sd-title" x="495" y="95">Store</text><text class="sd-cap" x="495" y="115">Columnar.</text><text class="sd-cap" x="495" y="128">Sub-second joins.</text><line class="sd-flow" x1="570" y1="100" x2="616" y2="100" marker-end="url(#sd-ops-arrow)"/><rect class="sd-node--emph" x="620" y="60" width="160" height="80" rx="10"/><text class="sd-title" x="700" y="95">Dashboard</text><text class="sd-cap" x="700" y="115">Analyst approves.</text><text class="sd-cap" x="700" y="128">Taxonomy learns.</text><text class="sd-cap" x="400" y="185" style="font-size:12px;">Browser SDK &#8594; ingest pipeline &#8594; columnar analytics store &#8594; analyst dashboards</text></svg>
+          </div>
+
+          <p class="sys-outcome">
+            An analyst-facing console over a columnar analytics store answers
+            behavioral queries at interactive latency. UI events are
+            <strong>auto-labeled at capture across a fleet of independently-developed applications</strong> &mdash;
+            the design constraint that made it interesting.
+          </p>
+
+          <details class="sys-more">
+            <summary>Read the design</summary>
+            <p>
+              An observability platform for enterprise operations telemetry.
+              A zero-dependency browser SDK instruments every UI surface
+              across a federated micro-frontend estate spanning multiple applications;
+              a Go ingest pipeline normalizes and enriches events; a columnar analytical
+              store answers queries at interactive latency; a React console turns the
+              stream into behavior data analysts can act on.
+            </p>
+            <p>
+              The design constraint that made it interesting: auto-label UI events
+              across a fleet of independently-developed applications, without asking
+              their teams to hand-author a taxonomy. Labels are proposed automatically
+              from the event stream; analysts approve with one click. Onboarding new
+              applications is kept deliberately low-friction so teams can adopt without
+              a code-change project.
+            </p>
+            <div class="chips">
+              <span>TypeScript</span><span>Go</span><span>ClickHouse</span><span>React</span>
+            </div>
+          </details>
+        </article>
+
+        <!-- ─── System 2 — Release-audit flight recorder (sanitized) ─── -->
+        <article class="card sys-card reveal" data-system="release-audit">
+          <h3>Release-audit &mdash; the flight recorder for deploys</h3>
+          <p class="sys-arch">Deploy events &rarr; append-only ledger &rarr; join with behavior telemetry &rarr; before/after regression view.</p>
+
+          <div class="sys-diagram-frame">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 230" role="img" aria-label="Release-audit flight recorder — deploy events land in an append-only ledger, joined against a behavior stream to produce a before/after regression view." class="sys-diagram sd-audit" preserveAspectRatio="xMidYMid meet" focusable="false"><title>Release-audit flight recorder</title> <style> .sd-audit .sd-node{fill:var(--color-surface,transparent);stroke:var(--color-border-strong,currentColor);stroke-width:1.25;}.sd-audit .sd-node--emph{fill:var(--color-accent-soft,transparent);stroke:var(--color-accent,currentColor);stroke-width:1.5;}.sd-audit .sd-title{fill:currentColor;font-family:var(--font-mono,ui-monospace,SFMono-Regular,monospace);font-size:15px;font-weight:600;text-anchor:middle;letter-spacing:0.02em;}.sd-audit .sd-cap{fill:var(--color-text-muted,currentColor);font-family:var(--font-sans,system-ui,sans-serif);font-size:11px;text-anchor:middle;}.sd-audit .sd-flow{fill:none;stroke:var(--color-accent,currentColor);stroke-width:2;stroke-linecap:round;stroke-dasharray:6 8;animation:sd-flow-audit 1.6s linear infinite;}.sd-audit .sd-flow--warn{stroke:var(--color-warn,currentColor);animation-duration:2.2s;}.sd-audit .sd-arrow{fill:var(--color-accent,currentColor);}.sd-audit .sd-arrow--warn{fill:var(--color-warn,currentColor);}@keyframes sd-flow-audit{to{stroke-dashoffset:-28;}}@media (prefers-reduced-motion:reduce){.sd-audit .sd-flow,.sd-audit .sd-flow--warn{animation:none;stroke-dasharray:0;}}</style> <defs><marker id="sd-audit-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="sd-arrow"/></marker><marker id="sd-audit-arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="sd-arrow--warn"/></marker></defs><rect class="sd-node--emph" x="20" y="30" width="150" height="70" rx="10"/><text class="sd-title" x="95" y="60">Deploy</text><text class="sd-cap" x="95" y="80">Every merge to main</text><text class="sd-cap" x="95" y="93">is an event.</text><line class="sd-flow" x1="170" y1="65" x2="216" y2="65" marker-end="url(#sd-audit-arrow)"/><rect class="sd-node" x="220" y="30" width="160" height="70" rx="10"/><text class="sd-title" x="300" y="60">Ledger</text><text class="sd-cap" x="300" y="80">Append-only.</text><text class="sd-cap" x="300" y="93">Content-addressed.</text><rect class="sd-node" x="220" y="130" width="160" height="60" rx="10"/><text class="sd-title" x="300" y="158" style="font-size:13px;">Behavior stream</text><text class="sd-cap" x="300" y="176">Session telemetry.</text><line class="sd-flow" x1="380" y1="65" x2="470" y2="105" marker-end="url(#sd-audit-arrow)"/><line class="sd-flow" x1="380" y1="160" x2="470" y2="120" marker-end="url(#sd-audit-arrow)"/><rect class="sd-node" x="470" y="80" width="140" height="70" rx="10"/><text class="sd-title" x="540" y="110">Join</text><text class="sd-cap" x="540" y="130">Deploy &times; behavior.</text><text class="sd-cap" x="540" y="143">Queryable.</text><line class="sd-flow sd-flow--warn" x1="610" y1="115" x2="656" y2="115" marker-end="url(#sd-audit-arrow-warn)"/><rect class="sd-node--emph" x="660" y="80" width="130" height="70" rx="10"/><text class="sd-title" x="725" y="110">Diff</text><text class="sd-cap" x="725" y="130">Before vs. after.</text><text class="sd-cap" x="725" y="143">Regression view.</text><text class="sd-cap" x="400" y="215" style="font-size:12px;">Deploy events &#8594; append-only ledger &#8594; join with behavior telemetry &#8594; before/after regression view</text></svg>
+          </div>
+
+          <p class="sys-outcome">
+            Turns &ldquo;did our last release break something?&rdquo; from a
+            <strong>days-long investigation into a minutes-long query</strong> against a
+            queryable deploy ledger &mdash; the before/after regression view drops out of
+            the join directly, so the answer is a query, not a triage.
+          </p>
+
+          <details class="sys-more">
+            <summary>Read the design</summary>
+            <p>
+              A release-audit flight recorder that captures the trailing state around
+              every deploy: an append-only ledger of what shipped, joined against the
+              operational telemetry stream to produce a before/after behavioral diff.
+              Every merge to main becomes a queryable event with its blast radius
+              attached.
+            </p>
+            <p>
+              A queryable deploy ledger joined against session telemetry, so
+              before/after behavioral diffs are a query, not an investigation.
+            </p>
+            <div class="chips">
+              <span>Go</span><span>ClickHouse</span><span>SQL</span>
+            </div>
+          </details>
+        </article>
+
+        <!-- ─── System 3 — Zero-touch delivery / gitops-autopilot ─── -->
+        <article class="card sys-card reveal" data-system="gitops-autopilot">
+          <h3>Zero-touch delivery</h3>
+          <p class="sys-arch">Bump PR &rarr; policy-gated approval &rarr; auto-merge &rarr; drift detection &rarr; pin-back rollback.</p>
+
+          <div class="sys-diagram-frame">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 260" role="img" aria-label="Zero-touch delivery loop — a bot-authored bump PR passes policy-gated approval, is auto-merged, observed for drift, and pinned back to last-known-good on divergence." class="sys-diagram sd-loop" preserveAspectRatio="xMidYMid meet" focusable="false"><title>Zero-touch delivery loop</title> <style> .sd-loop .sd-node{fill:var(--color-surface,transparent);stroke:var(--color-border-strong,currentColor);stroke-width:1.25;}.sd-loop .sd-node--emph{fill:var(--color-accent-soft,transparent);stroke:var(--color-accent,currentColor);stroke-width:1.5;}.sd-loop .sd-title{fill:currentColor;font-family:var(--font-mono,ui-monospace,SFMono-Regular,monospace);font-size:14px;font-weight:600;text-anchor:middle;letter-spacing:0.02em;}.sd-loop .sd-cap{fill:var(--color-text-muted,currentColor);font-family:var(--font-sans,system-ui,sans-serif);font-size:11px;text-anchor:middle;}.sd-loop .sd-path{fill:none;stroke:var(--color-accent,currentColor);stroke-width:2;stroke-linecap:round;}.sd-loop .sd-flow-dot{fill:var(--color-accent,currentColor);}.sd-loop .sd-rollback{stroke:var(--color-warn,currentColor);stroke-dasharray:5 6;}.sd-loop .sd-rollback-dot{fill:var(--color-warn,currentColor);}.sd-loop .sd-arrow{fill:var(--color-accent,currentColor);}.sd-loop .sd-arrow--warn{fill:var(--color-warn,currentColor);}.sd-loop .sd-flow-dot{animation:sd-flow-loop 6s linear infinite;}.sd-loop .sd-rollback-dot{animation:sd-flow-rollback 3s linear infinite;}@keyframes sd-flow-loop{0%{transform:translate(90px,60px);}25%{transform:translate(250px,60px);}50%{transform:translate(410px,60px);}75%{transform:translate(570px,60px);}100%{transform:translate(570px,180px);}}@keyframes sd-flow-rollback{0%{transform:translate(500px,180px);opacity:0.2;}50%{transform:translate(300px,130px);opacity:1;}100%{transform:translate(120px,60px);opacity:0.2;}}@media (prefers-reduced-motion:reduce){.sd-loop .sd-flow-dot,.sd-loop .sd-rollback-dot{animation:none;visibility:hidden;}}</style> <defs><marker id="sd-loop-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="sd-arrow"/></marker><marker id="sd-loop-arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="sd-arrow--warn"/></marker></defs><rect class="sd-node--emph" x="20" y="30" width="140" height="60" rx="10"/><text class="sd-title" x="90" y="55">Bump</text><text class="sd-cap" x="90" y="75">Bot authors bump PR.</text><rect class="sd-node" x="180" y="30" width="140" height="60" rx="10"/><text class="sd-title" x="250" y="55">Approve</text><text class="sd-cap" x="250" y="75">Policy-gated.</text><rect class="sd-node" x="340" y="30" width="140" height="60" rx="10"/><text class="sd-title" x="410" y="55">Land</text><text class="sd-cap" x="410" y="75">Auto-merge.</text><rect class="sd-node" x="500" y="30" width="140" height="60" rx="10"/><text class="sd-title" x="570" y="55">Observe</text><text class="sd-cap" x="570" y="75">Drift detector.</text><rect class="sd-node--emph" x="500" y="150" width="140" height="60" rx="10"/><text class="sd-title" x="570" y="175">Rollback</text><text class="sd-cap" x="570" y="195">Pin to last-good.</text><line class="sd-path" x1="160" y1="60" x2="176" y2="60" marker-end="url(#sd-loop-arrow)"/><line class="sd-path" x1="320" y1="60" x2="336" y2="60" marker-end="url(#sd-loop-arrow)"/><line class="sd-path" x1="480" y1="60" x2="496" y2="60" marker-end="url(#sd-loop-arrow)"/><line class="sd-path sd-rollback" x1="570" y1="90" x2="570" y2="146" marker-end="url(#sd-loop-arrow-warn)"/><path class="sd-path sd-rollback" d="M 500 180 C 300 200, 150 160, 90 90" marker-end="url(#sd-loop-arrow-warn)"/><circle class="sd-flow-dot" cx="0" cy="0" r="4"/><circle class="sd-rollback-dot" cx="0" cy="0" r="4"/><text class="sd-cap" x="600" y="125" style="fill: var(--color-warn, currentColor);">on drift</text><text class="sd-cap" x="400" y="245" style="font-size:12px;">Bump PR &#8594; policy-gated approval &#8594; auto-merge &#8594; drift detection &#8594; pin-back rollback</text></svg>
+          </div>
+
+          <p class="sys-outcome">
+            Merge to main and walk away &mdash; the loop lands the change, watches for drift,
+            and pins back to the last-known-good commit without a human in the middle.
+          </p>
+
+          <details class="sys-more">
+            <summary>Read the design</summary>
+            <p>
+              A CI bot authors image-bump PRs, a policy-gated approval clears them,
+              auto-merge lands them, a drift detector watches for divergence between
+              observed and desired state, and a pin-back rollback returns any regression
+              to its last-known-good commit &mdash; end-to-end, no human in the middle.
+            </p>
+            <p>
+              The design constraint: the loop preserves the GitHub rails that keep humans
+              safe (a PR can't approve itself; the author can't merge their own change)
+              while still running end-to-end without a human in the middle &mdash; a
+              constraint that quietly breaks naive deploy automation.
+            </p>
+            <div class="chips">
+              <span>GitHub Actions</span><span>Kubernetes</span><span>GitOps</span>
+            </div>
+          </details>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ───────────────────────── red-team case study ─────────────────
+         Show-don't-tell: describe an adversarial audit I ran against
+         my own tool, with buckets, counts, and status keyed off the
+         PUBLIC report — vetlock/docs/REDTEAM-2026-07-12.md. Every
+         number in this block is quoted from that file (see report
+         "Aggregate Counts" + "v0.3.0 Closure Status" sections). No
+         claim in this section may go beyond what the public report
+         says. Progressive-enhancement contract: the visible payload
+         is a semantic <ol>; the SVG rail is decoration only, and JS
+         does nothing here — the section renders fully with JS off.
+    -->
+    <section id="red-team" class="rt" aria-labelledby="rt-title">
+      <h2 id="rt-title"><span class="mono h-idx">·</span> Red team
+        <span class="tag mono" aria-label="public report">
+          <span class="tag-dot rt-tag-dot" aria-hidden="true"></span>public report
+        </span>
+      </h2>
+
+      <div class="rt-lede reveal">
+        <p class="rt-hook">
+          <strong>I hired six adversaries to break my own security tool.</strong>
+        </p>
+        <p>
+          Six specialised red-team agents, one brief:
+          <em>find a way past vetlock</em>. They proposed
+          <strong>48 candidate exploits</strong> across six territories —
+          AST-level evasions, lockfile parsing blindspots, cache and
+          config trust, multi-primitive compositions, defender-corner
+          moves that turn vetlock's own configuration against it, and
+          orthogonal blindspots nobody had thought about. A separate
+          adversarial <em>verifier</em> agent triaged each candidate
+          with a default-refuted stance: no proof-of-concept, no
+          confirmation.
+        </p>
+        <p>
+          After dedup, <strong>35 exploits were confirmed</strong> against
+          the v0.2.0 baseline — a 73% confirmation rate. Two were
+          refuted, one plausible, seven partial. Every finding is
+          catalogued with a stable ID, a proof-of-concept, and a
+          fix-or-accept decision in the
+          <a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md"
+             data-evt="rt.report">public red-team report<span aria-hidden="true"> ↗</span></a>.
+        </p>
+        <p>
+          As of v0.3.0 plus a tail audit,
+          <strong>37 of 48 catalogued exploits are closed</strong>, each
+          with a dedicated <code>REDTEAM &lt;ID&gt; FIX</code> code tag
+          in the codebase. <strong>Eleven remain
+          open</strong> — deliberately, and the report names them. The
+          three cheapest, highest-impact avenues are documented so the
+          next reviewer knows exactly where to push.
+        </p>
+      </div>
+
+      <!-- ─── exploit-bucket timeline ───────────────────────────────
+           Semantic <ol> is the load-bearing structure: screen readers
+           and JS-off clients get an ordered list with title + a
+           neutral "see report" chip. The <li>::before rail markers
+           duplicate the numbering visually.
+
+           Per-bucket status labels are intentionally NOT rolled up
+           here. The public report enumerates dispositions per-ID
+           (48 IDs; 37 closed, 11 open in aggregate); a per-bucket
+           verdict would inevitably paper over mixed-status buckets.
+           Readers who want the closure state of any specific ID
+           follow the link — that's the single source of truth. -->
+      <ol class="rt-timeline reveal" aria-label="Exploit buckets from the red-team review">
+        <li class="rt-bucket" data-bucket="L">
+          <div class="rt-bucket-head">
+            <span class="rt-bucket-code mono" aria-hidden="true">L</span>
+            <h3 class="rt-bucket-title">Language — AST pattern evasions</h3>
+            <a class="rt-status mono"
+               href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md"
+               data-evt="rt.bucket.L">see report<span aria-hidden="true"> ↗</span></a>
+          </div>
+          <p class="rt-bucket-desc">
+            Constant-folding gaps, alias-tracker corner cases, dynamic
+            <code>require</code> shapes. L9 (the <em>Shai-Hulud</em>
+            shape) was the anchor case at v0.2.0 — an OBF + EXEC + ENV
+            + FS chain that stayed WARN because OBF escalation only
+            fired on NET or INSTALL. Closed in v0.3.0 by broadening
+            Escalation 1 in <code>packages/detectors/src/index.ts</code>
+            to promote OBF → BLOCK on any of NET / INSTALL / EXEC /
+            ENV / FS in the same package.
+          </p>
+          <p class="rt-bucket-ids mono">IDs&nbsp;L1–L11</p>
+        </li>
+
+        <li class="rt-bucket" data-bucket="F">
+          <div class="rt-bucket-head">
+            <span class="rt-bucket-code mono" aria-hidden="true">F</span>
+            <h3 class="rt-bucket-title">Format — lockfile parsing blindspots</h3>
+            <a class="rt-status mono"
+               href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md"
+               data-evt="rt.bucket.F">see report<span aria-hidden="true"> ↗</span></a>
+          </div>
+          <p class="rt-bucket-desc">
+            npm-only assumptions vs. pnpm and yarn lockfile shapes.
+            F1 was the report's anchor example at v0.2.0 — a
+            pnpm/yarn shape that crashed the scanner to exit 3,
+            which most CI configurations treated as an infra blip.
+            Closed in v0.3.0; see the report for the timeline.
+          </p>
+          <p class="rt-bucket-ids mono">IDs&nbsp;F1–F3, F5–F10</p>
+        </li>
+
+        <li class="rt-bucket" data-bucket="S">
+          <div class="rt-bucket-head">
+            <span class="rt-bucket-code mono" aria-hidden="true">S</span>
+            <h3 class="rt-bucket-title">System — cache, TOCTOU, config trust</h3>
+            <a class="rt-status mono"
+               href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md"
+               data-evt="rt.bucket.S">see report<span aria-hidden="true"> ↗</span></a>
+          </div>
+          <p class="rt-bucket-desc">
+            HMAC-authenticated cache holds up; the softer surface is
+            trust in on-disk config. S2 — a malicious
+            <code>.vetlock.json</code> shipped in the same PR — is
+            the report's cheapest silencer.
+          </p>
+          <p class="rt-bucket-ids mono">IDs&nbsp;S1–S10</p>
+        </li>
+
+        <li class="rt-bucket" data-bucket="C">
+          <div class="rt-bucket-head">
+            <span class="rt-bucket-code mono" aria-hidden="true">C</span>
+            <h3 class="rt-bucket-title">Compositional — multi-primitive chains</h3>
+            <a class="rt-status mono"
+               href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md"
+               data-evt="rt.bucket.C">see report<span aria-hidden="true"> ↗</span></a>
+          </div>
+          <p class="rt-bucket-desc">
+            Chains that combine two individually-benign primitives to
+            escape a single-signal escalation rule. Fixes gated on a
+            rework of the escalation graph, called out in the report.
+          </p>
+          <p class="rt-bucket-ids mono">IDs&nbsp;C1–C6</p>
+        </li>
+
+        <li class="rt-bucket" data-bucket="D">
+          <div class="rt-bucket-head">
+            <span class="rt-bucket-code mono" aria-hidden="true">D</span>
+            <h3 class="rt-bucket-title">Defender-corner — self-exemption</h3>
+            <a class="rt-status mono"
+               href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md"
+               data-evt="rt.bucket.D">see report<span aria-hidden="true"> ↗</span></a>
+          </div>
+          <p class="rt-bucket-desc">
+            Config-based moves that turn vetlock's own knobs against
+            it — allowlist an attacker's package, disable a category,
+            silence via a shipped config. Fixes are deferred to a
+            signed-config redesign called out in the report.
+          </p>
+          <p class="rt-bucket-ids mono">IDs&nbsp;D1–D6</p>
+        </li>
+
+        <li class="rt-bucket" data-bucket="N">
+          <div class="rt-bucket-head">
+            <span class="rt-bucket-code mono" aria-hidden="true">N</span>
+            <h3 class="rt-bucket-title">Novel — orthogonal blindspots</h3>
+            <a class="rt-status mono"
+               href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md"
+               data-evt="rt.bucket.N">see report<span aria-hidden="true"> ↗</span></a>
+          </div>
+          <p class="rt-bucket-desc">
+            The wildcard bucket. N1 (bundledDependencies bypass —
+            packages the lockfile never lists because they ship
+            inside another package) is the report's single
+            highest-impact open finding.
+          </p>
+          <p class="rt-bucket-ids mono">IDs&nbsp;N1–N6</p>
+        </li>
+      </ol>
+
+      <p class="rt-legend mono reveal">
+        Per-ID dispositions (closed / open) are enumerated in the
+        <a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md"
+           data-evt="rt.report.legend">full report<span aria-hidden="true"> ↗</span></a>.
+      </p>
+
+      <!-- Evidence links only. The report is public, but no single
+           finding yet exposes a BEFORE/AFTER code diff we can quote
+           verbatim — so instead of illustrating one, the section
+           points at the primary sources readers can verify: the
+           report itself, the corpus fixtures, and the closing PRs.
+           When a specific fix's snippet lands publicly, add it here. -->
+      <p class="rt-fix-links mono reveal">
+        <a href="https://github.com/OJ-Uday/vetlock/blob/main/docs/REDTEAM-2026-07-12.md"
+           data-evt="rt.report.fix">full report<span aria-hidden="true"> ↗</span></a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/OJ-Uday/vetlock/tree/main/corpus"
+           data-evt="rt.corpus">corpus fixtures<span aria-hidden="true"> ↗</span></a>
+        <span aria-hidden="true">·</span>
+        <a href="https://github.com/OJ-Uday/vetlock/pulls?q=is%3Apr+redteam+in%3Atitle"
+           data-evt="rt.prs">closing PRs<span aria-hidden="true"> ↗</span></a>
+      </p>
+    </section>
+
+    <!-- ───────────────────────── projects ─────────────────────────
+         Each card:
+           • .proj-preview  — decorative inline SVG (aria-hidden) tagged
+             "placeholder" so it reads as illustrative, not a screenshot.
+             Kept small (~64px tall) so it doesn't blow the perf budget.
+           • .proj-body     — title (with ↗), one-line description,
+             .proj-metrics (only where numbers are verifiable from the
+             public repo), and the existing .chips tech row.
+         Metrics rule: any number here must trace to something a reader
+         can verify in the linked repo. If not, drop it — don't fake.
+         gitops-autopilot has no unique verifiable metric today, so its
+         metrics strip is intentionally omitted. -->
     <section id="projects">
       <h2><span class="mono h-idx">02</span> Open source</h2>
       <div class="cards grid2">
+
         <a class="card proj reveal accent-border" href="https://github.com/OJ-Uday/vetlock" data-evt="proj.vetlock">
-          <h3 class="mono">vetlock <span class="arrow" aria-hidden="true">↗</span></h3>
-          <p>Behavioral diff for npm dependency updates — what does this update DO now that it didn't before? 17 detectors, HMAC-authed cache, Damerau-Levenshtein typosquat matching, GHSA adjacency, NEVER-EXECUTE invariant. 424 tests, 39/48 red-team exploits closed. <code>npx vetlock demo</code> tries it in 10 seconds.</p>
-          <div class="chips"><span>TypeScript</span><span>Node</span><span>SAST</span><span>Apache-2.0</span></div>
+          <div class="proj-preview" aria-hidden="true">
+            <!-- Lockfile diff → detector fan-out → verdict pill.
+                 Visual metaphor for the actual pipeline the scanner runs. -->
+            <svg class="proj-preview-svg" viewBox="0 0 320 64" role="presentation" focusable="false">
+              <rect x="6"   y="18" width="46" height="28" rx="4" class="s-m"/>
+              <rect x="6"   y="18" width="46" height="10" rx="4 4 0 0" class="f-m" opacity="0.35"/>
+              <rect x="60"  y="18" width="46" height="28" rx="4" class="s-a"/>
+              <rect x="60"  y="18" width="46" height="10" rx="4 4 0 0" class="f-a" opacity="0.35"/>
+              <path d="M112 32 H140" class="s-m s-dash"/>
+              <circle cx="150" cy="32" r="8" class="s-a"/>
+              <path d="M158 32 H180" class="s-m s-dash"/>
+              <circle cx="196" cy="14" r="3" class="f-a"/>
+              <circle cx="196" cy="32" r="3" class="f-a"/>
+              <circle cx="196" cy="50" r="3" class="f-a"/>
+              <path d="M180 32 L193 14 M180 32 L193 32 M180 32 L193 50" class="s-m"/>
+              <path d="M199 14 H228 M199 32 H228 M199 50 H228" class="s-m"/>
+              <rect x="238" y="20" width="72" height="24" rx="12" class="f-a"/>
+              <text x="274" y="36" text-anchor="middle" font-family="ui-monospace, monospace"
+                    font-size="9" font-weight="700" class="f-on-a">BLOCK</text>
+            </svg>
+            <span class="proj-preview-tag mono">placeholder</span>
+          </div>
+          <div class="proj-body">
+            <h3 class="mono">vetlock <span class="arrow" aria-hidden="true">↗</span></h3>
+            <p>Behavioral diff for npm dependency updates — what does this update <em>do</em> now that it didn't before? 17 detectors, HMAC-authed cache, Damerau-Levenshtein typosquat matching, GHSA adjacency, NEVER-EXECUTE invariant. <code>npx vetlock demo</code> tries it in 10 seconds.</p>
+            <ul class="proj-metrics">
+              <li><strong>17</strong> detectors</li>
+              <li><strong>424</strong> tests</li>
+              <li><strong>39 / 48</strong> red-team exploits closed</li>
+              <li><strong>12/13</strong> replay fixtures caught</li>
+            </ul>
+            <div class="chips"><span>TypeScript</span><span>Node</span><span>SAST</span><span>Apache-2.0</span></div>
+          </div>
         </a>
         <a class="card proj reveal" href="https://github.com/OJ-Uday/telemetry-sdk-patterns" data-evt="proj.sdk">
           <h3 class="mono">telemetry-sdk-patterns <span class="arrow" aria-hidden="true">↗</span></h3>
@@ -458,6 +1003,7 @@
           <p>Five strictly-typed hooks, each fixing a named footgun: cross-tab storage sync, churn-free listeners, undo/redo with correct history forking, debounced values.</p>
           <div class="chips"><span>React</span><span>TypeScript</span></div>
         </a>
+
       </div>
     </section>
 
@@ -467,7 +1013,7 @@
       <ol class="timeline">
         <li class="reveal">
           <div class="t-head"><strong>Software Engineering Intern</strong> · Eli Lilly and Company <span class="t-date mono">Jan – Jul 2026</span></div>
-          <p>Built the telemetry platform, release-audit service, and zero-touch delivery pipeline above; 25+ production PRs across SDK, backend, and dashboard in the final two weeks.</p>
+          <p>Production TypeScript, Go, and React on internal developer-tooling — SDK, backend, and dashboard slices across the internship.</p>
         </li>
         <li class="reveal">
           <div class="t-head"><strong>Cybersecurity Intern</strong> · CyberRange <span class="t-date mono">Jul – Nov 2024</span></div>
@@ -511,7 +1057,7 @@
         </li>
         <li class="reveal">
           <a href="https://github.com/OJ-Uday/telemetry-sdk-patterns/blob/main/docs/WHITEPAPER.md" data-evt="write.whitepaper">Self-building instrumentation</a>
-          <p class="writing-teaser">Hand-written analytics loses to features. Auto-capture breaks on every redesign. Nothing captures what a click was for. A sense-understand-act loop that names the UI from its own witnessed effects — two-tier identity + capture-time causality make that safe.</p>
+          <p class="writing-teaser">Hand-written analytics loses to features. Auto-capture breaks on every redesign. Nothing captures what a click was for. A sense-understand-act loop that names the UI from its own witnessed effects — auto-labeled at capture across a federated micro-frontend estate.</p>
         </li>
         <li class="reveal">
           <a href="https://github.com/OJ-Uday/gitops-autopilot/blob/main/docs/DESIGN.md" data-evt="write.twoid">The two-identity problem in zero-touch delivery</a>
@@ -586,6 +1132,48 @@
     } else {
       setTimeout(boot, 0);
     }
+  </script>
+  <!-- Lazy-load the proof layer only when it's about to enter the viewport.
+       Keeps first-view JS off the critical path (perf budget:
+       first-view < 200 KB gz). Falls back to eager import when
+       IntersectionObserver is missing so nothing regresses on
+       ancient browsers. -->
+  <script type="module">
+    (function () {
+      var target = document.getElementById('proof');
+      if (!target) return;
+      function load() {
+        import('/design/proof.js').then(function (m) { m.default && m.default(); });
+      }
+      if (typeof IntersectionObserver === 'undefined') { load(); return; }
+      var io = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) { io.disconnect(); load(); return; }
+        }
+      }, { rootMargin: '200px 0px' });
+      io.observe(target);
+    })();
+  </script>
+  <!-- Lazy-load the how-it-works scrollytelling driver. The section is
+       fully readable without JS (stages stack with inline SVGs), so it's
+       safe to defer until the user scrolls near it. rootMargin runs
+       generous — we want the observer installed before the first stage
+       enters the bandpass, or the initial swap looks late. -->
+  <script type="module">
+    (function () {
+      var target = document.getElementById('how-it-works');
+      if (!target) return;
+      function load() {
+        import('/design/how-it-works.js').then(function (m) { m.default && m.default(); });
+      }
+      if (typeof IntersectionObserver === 'undefined') { load(); return; }
+      var io = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) { io.disconnect(); load(); return; }
+        }
+      }, { rootMargin: '400px 0px' });
+      io.observe(target);
+    })();
   </script>
 </body>
 </html>

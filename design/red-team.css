@@ -1,0 +1,324 @@
+/* =====================================================================
+ * design/red-team.css — #red-team section (P4 show-don't-tell).
+ *
+ * SCOPE
+ *   Adversarial-audit case study: a narrative lede, a six-bucket
+ *   timeline (semantic <ol> styled as a rail + numbered markers), and
+ *   a before/after fix demonstration. Every color goes through the
+ *   token layer (design/tokens.css) — no raw hexes here (enforced by
+ *   scripts/no-hardcoded-colors.mjs).
+ *
+ * PROGRESSIVE-ENHANCEMENT CONTRACT
+ *   The <ol> renders as a plain ordered list with visible titles and
+ *   status labels even if this stylesheet fails to load. .reveal is
+ *   only added by app.js; primitives.css keeps it visible without JS.
+ *
+ * ACCESSIBILITY
+ *   - Bucket status colors are backed by iconic text ("closed",
+ *     "partial", "open") so color is never the only signal.
+ *   - The SVG-style left rail is aria-hidden via CSS-only decoration
+ *     (a border on <ol>), not a real <svg>, so screen readers ignore
+ *     it automatically.
+ *   - Focus rings inherit :focus-visible from style.css.
+ * ===================================================================== */
+
+/* Section shell ------------------------------------------------------- */
+.rt {
+  /* Matches surrounding sections' vertical rhythm without introducing
+     a competing max-width — the parent <main> already caps to 1120px. */
+  padding-top: 64px;
+}
+
+.rt h2 { color: var(--text); }
+
+/* Small "public report" pill next to the section title. Reuses the
+   .tag primitives from style.css but swaps the pulsing red dot for a
+   quieter teal so it reads as a state, not an alarm. */
+.rt-tag-dot {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+  animation: none;
+}
+
+/* Lede narrative ----------------------------------------------------- */
+.rt-lede {
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.65;
+  margin: 0 0 32px;
+}
+.rt-lede p { margin: 0 0 14px; }
+.rt-lede p:last-child { margin-bottom: 0; }
+.rt-lede strong { color: var(--text); font-weight: 600; }
+.rt-lede em { color: var(--accent); font-style: normal; }
+.rt-lede a { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+
+.rt-hook {
+  font-size: 1.12rem;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+}
+.rt-hook strong { color: var(--text); font-weight: 700; }
+
+/* Timeline: six numbered exploit buckets ----------------------------- */
+/* The <ol> itself is the vertical rail — a left border does the work
+   of an SVG line and stays perfectly aligned with the counters below.
+   No JS. No SVG. Prints correctly. */
+.rt-timeline {
+  list-style: none;
+  counter-reset: rt-bucket;
+  margin: 0 0 22px;
+  padding: 4px 0 4px 34px;
+  border-left: 1px solid var(--line);
+  display: grid;
+  gap: 18px;
+  position: relative;
+}
+
+.rt-bucket {
+  counter-increment: rt-bucket;
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  transition:
+    transform var(--dur-base) var(--ease-standard),
+    border-color var(--dur-base) var(--ease-standard),
+    box-shadow var(--dur-base) var(--ease-standard);
+}
+
+/* Rail marker — a circular numbered dot that pins the bucket to the
+   timeline rail. Sits on the border of <ol> so alignment is exact. */
+.rt-bucket::before {
+  content: counter(rt-bucket);
+  position: absolute;
+  left: -47px;
+  top: 14px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--panel);
+  border: 1px solid var(--accent-dim);
+  box-shadow: 0 0 0 4px var(--bg);
+}
+
+.rt-bucket:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-dim);
+  box-shadow: var(--shadow);
+}
+
+/* Rail marker stays neutral. Earlier iterations tinted it by
+   data-status (patched/partial/open), but per-bucket verdicts don't
+   cleanly roll up from the enumerated per-ID dispositions in the
+   report — so status is not shown at bucket granularity. */
+
+/* Bucket internals --------------------------------------------------- */
+.rt-bucket-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 6px;
+}
+
+.rt-bucket-code {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  border: 1px solid var(--accent-dim);
+  border-radius: 6px;
+  background: var(--accent-dim);
+}
+
+.rt-bucket-title {
+  font-size: 1rem;
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+  flex: 1 1 auto;
+}
+
+.rt-bucket-desc {
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin: 6px 0 8px;
+  max-width: 60em;
+}
+.rt-bucket-desc em { color: var(--accent); font-style: normal; }
+.rt-bucket-desc code {
+  font-size: 0.86em;
+  padding: 1px 5px;
+}
+
+.rt-bucket-ids {
+  color: var(--dim);
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+}
+
+/* Status chips ------------------------------------------------------- */
+/* Neutralized: every chip is now an anchor pointing at the public
+   report, since per-bucket verdicts don't cleanly roll up from the
+   enumerated per-ID dispositions. */
+.rt-status {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: var(--panel-2);
+  flex: 0 0 auto;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    color var(--dur-base) var(--ease-standard),
+    border-color var(--dur-base) var(--ease-standard);
+}
+a.rt-status { color: var(--muted); }
+a.rt-status:hover,
+a.rt-status:focus-visible {
+  color: var(--accent);
+  border-color: var(--accent-dim);
+  text-decoration: none;
+}
+
+/* Legend below the timeline ----------------------------------------- */
+.rt-legend {
+  color: var(--dim);
+  font-size: 0.76rem;
+  margin: 0 0 32px;
+  padding: 0 0 0 34px; /* aligns with the timeline rail */
+}
+
+/* Before/after fix demonstration ------------------------------------ */
+.rt-fix {
+  margin: 8px 0 0;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+}
+.rt-fix-head { margin: 0 0 16px; }
+.rt-fix-title {
+  font-size: 1rem;
+  margin: 0 0 4px;
+  color: var(--text);
+  font-weight: 600;
+}
+.rt-fix-sub {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 62ch;
+}
+
+.rt-fix-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 0 0 12px;
+}
+
+.rt-fix-col {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.rt-fix-col--before { border-color: var(--danger-dim); }
+.rt-fix-col--after  { border-color: var(--accent-dim); }
+
+.rt-fix-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.rt-fix-col-tag { color: var(--muted); }
+.rt-fix-col-verdict {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.rt-fix-col-verdict--miss  { color: var(--danger); border-color: var(--danger-dim); background: var(--danger-dim); }
+.rt-fix-col-verdict--catch { color: var(--accent); border-color: var(--accent-dim); background: var(--accent-dim); }
+
+.rt-fix-pre {
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text);
+  background: transparent;
+  overflow-x: auto;
+  white-space: pre;
+}
+.rt-fix-pre code {
+  font-family: var(--mono);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 1em;
+  color: inherit;
+}
+.rt-fix-clean { color: var(--danger); font-weight: 700; }
+.rt-fix-block { color: var(--accent); font-weight: 700; }
+
+.rt-fix-links {
+  font-size: 0.78rem;
+  color: var(--dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 4px 0 0;
+}
+.rt-fix-links a { color: var(--blue); }
+.rt-fix-links a:hover { text-decoration: underline; }
+
+/* Reduced motion ----------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .rt-bucket { transition: none; }
+  .rt-bucket:hover { transform: none; }
+}
+
+/* Responsive --------------------------------------------------------- */
+@media (max-width: 720px) {
+  .rt-fix-grid { grid-template-columns: 1fr; }
+  .rt-timeline { padding-left: 28px; }
+  .rt-bucket::before { left: -41px; width: 24px; height: 24px; font-size: 0.72rem; }
+  .rt-legend { padding-left: 28px; }
+  .rt-bucket-title { font-size: 0.98rem; }
+  .rt-status { width: 100%; text-align: center; }
+}
+
+/* Print — the section should read cleanly on paper: kill hover
+   transforms and background washes, and let the buckets flow. */
+@media print {
+  .rt-bucket { break-inside: avoid; box-shadow: none; }
+  .rt-fix { break-inside: avoid; }
+  .rt-fix-grid { grid-template-columns: 1fr; }
+}

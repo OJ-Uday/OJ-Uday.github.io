@@ -1,0 +1,204 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * design/systems.css — #systems section (P4 show-don't-tell).
+ *
+ * SCOPE
+ *   The four flagship-system cards, each rendered as:
+ *     · sanitized name
+ *     · one-line architecture-shape caption (mono, muted)
+ *     · animated inline SVG diagram
+ *     · one-line outcome line
+ *     · footer link row (repo link, or a <details> "read more" that expands
+ *       the sanitized narrative — no separate modal script needed).
+ *
+ *   Every color goes through the token layer. No raw hexes here — enforced
+ *   by scripts/no-hardcoded-colors.mjs.
+ *
+ * PROGRESSIVE ENHANCEMENT
+ *   The <details>/<summary> pattern for "read more" works with JS off:
+ *   the sanitized narrative is real DOM content, just collapsed by the
+ *   browser. The animated SVGs inline into the page (no <img>) so the
+ *   diagram is present + readable with JS off, and CSS-only animations
+ *   run under a prefers-reduced-motion carve-out inside each SVG.
+ *
+ * LAYOUT
+ *   Two-up on wide viewports (a system diagram + narrative is a lot to
+ *   read; four across is too dense). One-up under 900px. Card gap and
+ *   inner padding align with the rest of the page's card grid.
+ *
+ * A11Y
+ *   - Each diagram is role="img" with a full aria-label of the
+ *     architecture shape, so the SVG announces as a single meaningful
+ *     unit to AT and the visual boxes/arrows don't leak.
+ *   - <summary> is a native focusable disclosure control; focus rings
+ *     inherit from :focus-visible in primitives/style.
+ *   - Diagram outcome + narrative both live as plain text in the DOM;
+ *     the animation is purely decorative.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* Section shell — matches surrounding-section rhythm without imposing a
+   local max-width; <main> already caps the reading measure. */
+#systems {
+  padding-top: var(--space-8);
+}
+
+/* Grid override — two-up on wide viewports beats four-up here because
+   each card carries a full diagram plus a real narrative. The blanket
+   #systems .cards { repeat(4, 1fr); } rule from style.css targets the
+   four-line-item variant; the diagram grid takes over when present. */
+#systems .cards.sys-cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-5);
+}
+
+@media (min-width: 900px) {
+  #systems .cards.sys-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Individual system card — inherits .card visual identity from style.css
+   (bg, border, hover). We only add the internal rhythm the diagram + copy
+   need. */
+.sys-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.sys-card h3 {
+  color: var(--color-text);
+  margin: 0;
+  font-size: var(--fs-h4);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-tight);
+}
+
+/* Architecture-shape caption — the one-line SVG caption in prose form.
+   Mono + muted keeps it reading as a diagram legend, not body copy. */
+.sys-arch {
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-body);
+  margin: 0;
+}
+
+/* Diagram frame — a thin ruled surface that lets the SVG breathe against
+   the card background. The SVG itself uses `preserveAspectRatio="xMidYMid meet"`
+   so it scales gracefully as the card narrows. */
+.sys-diagram-frame {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  overflow: hidden;
+}
+
+.sys-diagram-frame .sys-diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+  color: var(--color-text);        /* SVGs use currentColor for titles */
+}
+
+/* Outcome line — sits directly below the diagram, quietly emphatic. */
+.sys-outcome {
+  color: var(--color-text);
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: var(--lh-body);
+}
+
+.sys-outcome strong {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* Footer row — link + read-more disclosure. Uses flex-wrap so it collapses
+   cleanly at narrow widths. */
+.sys-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: baseline;
+  margin-top: auto;               /* pin actions to bottom of card */
+}
+
+.sys-actions a {
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-accent-soft);
+  transition: border-color var(--dur-fast) var(--ease-standard);
+}
+
+.sys-actions a:hover,
+.sys-actions a:focus-visible {
+  border-bottom-color: var(--color-accent);
+}
+
+/* Read-more disclosure — native <details>/<summary> so it degrades under
+   JS-off without any script. Summary sits as a mono pill; expanded body is
+   the sanitized narrative + chips row. */
+.sys-more {
+  border-top: 1px dashed var(--color-border);
+  padding-top: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.sys-more > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  list-style: none;               /* hide default disclosure triangle */
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  transition: color var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard);
+}
+
+/* Chrome/Safari hide the WebKit-only disclosure marker. */
+.sys-more > summary::-webkit-details-marker { display: none; }
+
+.sys-more > summary::after {
+  content: "▸";
+  color: var(--color-text-dim);
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+
+.sys-more[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.sys-more > summary:hover,
+.sys-more > summary:focus-visible {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+}
+
+.sys-more p {
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: var(--lh-body);
+  margin: var(--space-3) 0 var(--space-2);
+}
+
+.sys-more p em {
+  color: var(--color-accent);
+  font-style: normal;
+}
+
+/* Chips row inside the read-more body — reuses the same visual language as
+   the site's top-level .chips, but nested so it can stay inside .sys-more
+   without inheriting card-level margins. */
+.sys-more .chips {
+  margin-top: var(--space-3);
+}

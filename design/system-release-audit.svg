@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 230" role="img"
+     aria-label="Release-audit flight recorder — deploy events land in an append-only ledger, joined against a behavior stream to produce a before/after regression view."
+     class="sys-diagram sd-audit" preserveAspectRatio="xMidYMid meet" focusable="false">
+  <title>Release-audit flight recorder</title>
+  <style>
+    .sd-audit .sd-node       { fill: var(--color-surface, transparent); stroke: var(--color-border-strong, currentColor); stroke-width: 1.25; }
+    .sd-audit .sd-node--emph { fill: var(--color-accent-soft, transparent); stroke: var(--color-accent, currentColor); stroke-width: 1.5; }
+    .sd-audit .sd-title      { fill: currentColor; font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace); font-size: 15px; font-weight: 600; text-anchor: middle; letter-spacing: 0.02em; }
+    .sd-audit .sd-cap        { fill: var(--color-text-muted, currentColor); font-family: var(--font-sans, system-ui, sans-serif); font-size: 11px; text-anchor: middle; }
+    .sd-audit .sd-flow       { fill: none; stroke: var(--color-accent, currentColor); stroke-width: 2; stroke-linecap: round; stroke-dasharray: 6 8; animation: sd-flow-audit 1.6s linear infinite; }
+    .sd-audit .sd-flow--warn { stroke: var(--color-warn, currentColor); animation-duration: 2.2s; }
+    .sd-audit .sd-arrow      { fill: var(--color-accent, currentColor); }
+    .sd-audit .sd-arrow--warn{ fill: var(--color-warn, currentColor); }
+    @keyframes sd-flow-audit { to { stroke-dashoffset: -28; } }
+    @media (prefers-reduced-motion: reduce) {
+      .sd-audit .sd-flow, .sd-audit .sd-flow--warn { animation: none; stroke-dasharray: 0; }
+    }
+  </style>
+  <defs>
+    <marker id="sd-audit-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="sd-arrow"/>
+    </marker>
+    <marker id="sd-audit-arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="sd-arrow--warn"/>
+    </marker>
+  </defs>
+
+  <!-- Deploy -->
+  <rect class="sd-node--emph" x="20"  y="30" width="150" height="70" rx="10"/>
+  <text class="sd-title" x="95"  y="60">Deploy</text>
+  <text class="sd-cap"   x="95"  y="80">Every merge to main</text>
+  <text class="sd-cap"   x="95"  y="93">is an event.</text>
+
+  <!-- flow: Deploy -> Ledger -->
+  <line class="sd-flow" x1="170" y1="65" x2="216" y2="65" marker-end="url(#sd-audit-arrow)"/>
+
+  <!-- Ledger -->
+  <rect class="sd-node" x="220" y="30" width="160" height="70" rx="10"/>
+  <text class="sd-title" x="300" y="60">Ledger</text>
+  <text class="sd-cap"   x="300" y="80">Append-only.</text>
+  <text class="sd-cap"   x="300" y="93">Content-addressed.</text>
+
+  <!-- Behavior stream (below) -->
+  <rect class="sd-node" x="220" y="130" width="160" height="60" rx="10"/>
+  <text class="sd-title" x="300" y="158" style="font-size:13px;">Behavior stream</text>
+  <text class="sd-cap"   x="300" y="176">Session telemetry.</text>
+
+  <!-- flows into Join -->
+  <line class="sd-flow" x1="380" y1="65"  x2="470" y2="105" marker-end="url(#sd-audit-arrow)"/>
+  <line class="sd-flow" x1="380" y1="160" x2="470" y2="120" marker-end="url(#sd-audit-arrow)"/>
+
+  <!-- Join -->
+  <rect class="sd-node" x="470" y="80" width="140" height="70" rx="10"/>
+  <text class="sd-title" x="540" y="110">Join</text>
+  <text class="sd-cap"   x="540" y="130">Deploy &#215; behavior.</text>
+  <text class="sd-cap"   x="540" y="143">Queryable.</text>
+
+  <!-- flow: Join -> Diff -->
+  <line class="sd-flow sd-flow--warn" x1="610" y1="115" x2="656" y2="115" marker-end="url(#sd-audit-arrow-warn)"/>
+
+  <!-- Diff -->
+  <rect class="sd-node--emph" x="660" y="80" width="130" height="70" rx="10"/>
+  <text class="sd-title" x="725" y="110">Diff</text>
+  <text class="sd-cap"   x="725" y="130">Before vs. after.</text>
+  <text class="sd-cap"   x="725" y="143">Regression view.</text>
+
+  <!-- Caption strip -->
+  <text class="sd-cap" x="400" y="215" style="font-size:12px;">
+    Deploy events &#8594; append-only ledger &#8594; join with behavior telemetry &#8594; before/after regression view
+  </text>
+</svg>
