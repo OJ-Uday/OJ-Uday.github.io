@@ -13,9 +13,9 @@ The script starts an in-process Node HTTP server that gzips text responses (matc
 | Lighthouse Perf (mobile, slow 4G) | 99 | >= 95 | PASS |
 | Lighthouse Perf (desktop, no throttle) | 100 | >= 98 | PASS |
 | Lighthouse Accessibility | 100 | >= 98 | PASS |
-| LCP (mobile, slow 4G) | 1862 ms | < 2000 ms | PASS |
+| LCP (mobile, slow 4G) | 1861 ms | < 2000 ms | PASS |
 | CLS (mobile) | 0.000 | < 0.05 | PASS |
-| First-view transfer (gz est.) | 97.5 KB | < 200 KB | PASS |
+| First-view transfer (gz est.) | 97.7 KB | < 200 KB | PASS |
 | design/tokens.css size | 10.3 KB | < 15 KB | PASS |
 
 ## Detail: Lighthouse
@@ -29,11 +29,11 @@ The script starts an in-process Node HTTP server that gzips text responses (matc
 
 | Metric | Mobile | Desktop |
 | --- | --- | --- |
-| LCP | 1862 ms | 52 ms |
-| FCP | 1636 ms | 52 ms |
-| TBT | 6 ms | 0 ms |
+| LCP | 1861 ms | 55 ms |
+| FCP | 1635 ms | 55 ms |
+| TBT | 4 ms | 0 ms |
 | CLS | 0.000 | 0.004 |
-| Total transferred (LH) | 106.8 KB | 106.8 KB |
+| Total transferred (LH) | 107.1 KB | 107.1 KB |
 | Requests (LH) | 16 | 16 |
 
 ## Detail: First-view payload (raw HTTP)
@@ -42,7 +42,7 @@ Same-origin assets that block first paint, byte-counted with a raw GET.
 
 | Asset | Kind | Bytes |
 | --- | --- | --- |
-| `/` | html | 90.7 KB |
+| `/` | html | 91.6 KB |
 | `/design/tokens.css` | css | 10.3 KB |
 | `/design/primitives.css` | css | 17.7 KB |
 | `/design/hero.css` | css | 12.4 KB |
@@ -58,12 +58,12 @@ Same-origin assets that block first paint, byte-counted with a raw GET.
 | `/design/red-team.css` | css | 8.9 KB |
 | `/design/projects.css` | css | 5.8 KB |
 | `app.js` | js | 72.2 KB |
-| **Total (raw)** |  | **375.9 KB** |
-| **Total (gz est.)** |  | **97.5 KB** |
+| **Total (raw)** |  | **376.8 KB** |
+| **Total (gz est.)** |  | **97.7 KB** |
 
 ---
 
-Generated: 2026-07-14T17:18:22.384Z
+Generated: 2026-07-14T17:34:42.619Z
 
 Tool versions:
 - node v20.19.2
