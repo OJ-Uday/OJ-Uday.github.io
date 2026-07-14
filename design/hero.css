@@ -83,13 +83,25 @@
  * ===================================================================== */
 .hero-bg {
   position: absolute;
-  inset: 0;
+  /* Break out of main's max-width + padding so the watcher graph bleeds
+     edge-to-edge on wide viewports. Without this, .hero sits inside
+     main's 1120px container and the watcher renders as a visible black
+     rectangle instead of the intended full-bleed backdrop.
+     Uses the "50% margin trick" so no horizontal scrollbar is triggered:
+     width equals the viewport, and negative margin pulls left by
+     (viewport - container)/2 so the layer starts at the left viewport
+     edge. Falls back gracefully at narrow widths where the container
+     already spans the viewport. */
+  left: 50%;
+  right: auto;
+  top: 0;
+  bottom: 0;
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: -50vw;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  /* Match the panel radius family so if a future design gives the hero
-     a card-like frame, the background clips cleanly. Zero cost today. */
-  border-radius: var(--radius-lg);
 }
 
 
