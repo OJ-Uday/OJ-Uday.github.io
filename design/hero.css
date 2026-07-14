@@ -1,0 +1,266 @@
+/* =====================================================================
+ * design/hero.css — scoped stylesheet for the P2 hero scene.
+ * See docs/adrs/0003-hero-tech.md and the P2 hero spec.
+ *
+ * WHY THIS FILE EXISTS
+ *   The hero introduces three new structural pieces the existing
+ *   style.css never anticipated:
+ *
+ *     • .hero-bg      — an absolutely-positioned background layer that
+ *                       stacks a static poster SVG under an animated
+ *                       canvas, both filling the hero grid track.
+ *     • .hero-poster  — the always-present static SVG (the LCP element
+ *                       per ADR 0003; ships whether or not JS runs).
+ *     • .hero-canvas  — the enhancement layer that fades in once
+ *                       hero.js has committed to running the scene, and
+ *                       fades back out if the runtime watchdog trips.
+ *
+ *   Rather than balloon style.css with hero-specific plumbing, this
+ *   delta lives in its own file, loaded AFTER primitives.css and
+ *   BEFORE style.css. Load order matters: primitives.css owns tokens +
+ *   generic utilities; hero.css owns hero-only structural rules;
+ *   style.css comes last so it can still override during migration.
+ *
+ * TOKEN DISCIPLINE
+ *   Every value on the right of a colon resolves through var(--*). No
+ *   hardcoded colors, spacing, radii, or durations. The
+ *   scripts/no-hardcoded-colors.mjs gate will reject this file if it
+ *   drifts. Add new values to tokens.css first.
+ *
+ * STATE MODEL
+ *   Baseline (no JS, no state attribute): poster visible, canvas hidden.
+ *   Once hero.js has passed every F.1–F.3 check AND painted its first
+ *   frame, it flips the hero into the "running" state. That flip is
+ *   expressed TWO ways so whichever the runtime uses lights up:
+ *
+ *     • data-hero-state="running" on .hero-bg (or .hero)
+ *     • .is-canvas-ready class on .hero-bg
+ *
+ *   In "running" the canvas fades up and the poster fades to zero
+ *   opacity while remaining in the layout — LCP-captured paint stays
+ *   stable, and a mid-run degradation can restore the poster instantly.
+ * ===================================================================== */
+
+
+/* =====================================================================
+ * 1) HERO CONTAINER — establish a positioned stacking context.
+ * ---------------------------------------------------------------------
+ * .hero already has its grid geometry in style.css (1.05fr 0.95fr, 40px
+ * gap, 78vh min-height) and is re-consumed by the ≤900px collapse rule.
+ * We do NOT touch the base `.hero` selector — that contract belongs to
+ * style.css. Instead we scope the two stacking-context properties to
+ * the P2 variant only: `.hero:has(> .hero-bg)` matches when (and only
+ * when) the hero includes the background layer this stylesheet owns.
+ * position:relative anchors the absolute .hero-bg, and isolation:isolate
+ * creates a local stacking context so hero z-indexes don't fight the
+ * nav's. Any future consumer of the plain `.hero` (or the mobile
+ * collapse) still sees a bare grid container — no unexpected stacking
+ * context, no isolate boundary trapping absolute overlays.
+ * ===================================================================== */
+.hero:has(> .hero-bg) {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Copy column and console panel sit on top of the background layer.
+   z-index: 1 is enough — .hero-bg is at z-index: 0. */
+.hero > .hero-copy,
+.hero > .console {
+  position: relative;
+  z-index: 1;
+}
+
+
+/* =====================================================================
+ * 2) HERO BACKGROUND LAYER — absolute, fills the hero.
+ * ---------------------------------------------------------------------
+ * .hero-bg wraps the poster SVG and the canvas. It fills the hero grid
+ * track via inset: 0, and sits at z-index: 0 behind the copy.
+ * pointer-events: none lets clicks pass through to CTAs in the copy —
+ * the hero is decorative, not interactive at the DOM level. hero.js
+ * listens on document/window for pointermove so the scene still reacts
+ * to the cursor. overflow: hidden clips sweep-ring overshoot at edges.
+ * ===================================================================== */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  /* Match the panel radius family so if a future design gives the hero
+     a card-like frame, the background clips cleanly. Zero cost today. */
+  border-radius: var(--radius-lg);
+}
+
+
+/* =====================================================================
+ * 3) POSTER + CANVAS — shared positioning, opacity-driven cross-fade.
+ * ---------------------------------------------------------------------
+ * Both children fill .hero-bg identically and cross-fade via opacity.
+ * Kept in the layout at all times (no display:none, no visibility:hidden)
+ * so LCP paint stays stable and the watchdog can restore the poster
+ * instantly by flipping the state attribute back to "poster".
+ * ===================================================================== */
+.hero-poster,
+.hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* --dur-slow feels intentional, not jarring. Reduced-motion collapses
+     it to ~0ms via tokens.css, so a11y users get an instant swap. */
+  transition: opacity var(--dur-slow) var(--ease-standard);
+}
+
+/* Baseline: poster visible, canvas invisible. This is the state the
+   page renders in with JS off, or before hero.js has run. */
+.hero-poster { opacity: 1; }
+.hero-canvas { opacity: 0; }
+
+
+/* =====================================================================
+ * 4) STATE: RUNNING — canvas fades in, poster fades out.
+ * ---------------------------------------------------------------------
+ * Expressed via BOTH a data attribute (data-hero-state="running") and a
+ * class (.is-canvas-ready) so whichever the runtime uses lights up the
+ * same rules. Selectors match either .hero-bg or the .hero section so
+ * hero.js can flip the flag on whichever element is convenient.
+ * ===================================================================== */
+.hero-bg[data-hero-state="running"] .hero-canvas,
+.hero[data-hero-state="running"] .hero-canvas,
+.hero-bg.is-canvas-ready .hero-canvas {
+  opacity: 1;
+}
+
+.hero-bg[data-hero-state="running"] .hero-poster,
+.hero[data-hero-state="running"] .hero-poster,
+.hero-bg.is-canvas-ready .hero-poster {
+  opacity: 0;
+}
+
+/* Explicit "poster" state is a no-op relative to the baseline, but
+   naming it makes hero.js legible: setState('poster') vs setState('running'). */
+.hero-bg[data-hero-state="poster"] .hero-canvas,
+.hero[data-hero-state="poster"] .hero-canvas {
+  opacity: 0;
+}
+
+
+/* =====================================================================
+ * 5) REDUCED-MOTION — no cross-fade, just instant state.
+ * ---------------------------------------------------------------------
+ * tokens.css already collapses --dur-* to ~0ms under
+ * prefers-reduced-motion. This block is defensive — it kills the
+ * transition outright so no user agent that ignores the token override
+ * can animate the fade against the user's preference.
+ * ===================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .hero-poster,
+  .hero-canvas {
+    transition: none;
+  }
+}
+
+
+/* =====================================================================
+ * 6) MOBILE
+ * ---------------------------------------------------------------------
+ * The hero grid collapses to a single column at ≤ 900px (handled in
+ * style.css). The background still fills the hero, spanning the full
+ * width instead of the left grid track — no change needed here. If perf
+ * on very old mobile becomes a problem, the one-line escape hatch
+ * documented in the spec §I.2 lives in style.css, NOT here (this file
+ * is scoped to hero geometry).
+ * ===================================================================== */
+
+
+/* =====================================================================
+ * 7) COPY SCRIM — poster texture yields to the copy column.
+ * ---------------------------------------------------------------------
+ * The poster SVG paints a graph of ~60 dots (currentColor resolves to
+ * --color-text-dim) plus a line network (--color-text-muted) across the
+ * entire hero-bg. In dark mode --color-text-dim (slate-500) and
+ * --color-text-muted (slate-350) share the same mid-gray tonal family
+ * as the lede paragraph's color (--muted → slate-350). Where a dot
+ * happens to fall behind a lede glyph the letterform mottles — a
+ * legibility regression relative to the pre-P2 hero, which had no
+ * background layer at all.
+ *
+ * The scrim below is an absolutely-positioned ::after inside .hero-bg
+ * that fades the poster (and, while running, the canvas) down to
+ * --color-bg under the LEFT half of the hero — exactly where the copy
+ * column sits. The right half stays transparent because the console
+ * panel there is already opaque (`background: var(--panel)` in
+ * style.css), so no poster texture leaks through to the console.
+ *
+ * --color-bg is theme-aware, so the scrim fades to whichever base color
+ * the active theme paints, adapting to dark and light without extra
+ * media queries. At ≤ 900px the hero collapses to a single column and
+ * copy stacks above the console, so the scrim rotates 90° to fade from
+ * the top of the hero downward — same protection, different axis.
+ *
+ * The scrim's opaque stops are NOT fully solid --color-bg. In dark mode
+ * style.css paints a subtle body-level radial glow behind the hero
+ * (--accent-dim wash from `body { background: radial-gradient(...) }`),
+ * which was part of the pre-P2 aesthetic behind the H1/lede/CTAs. A
+ * fully-opaque scrim over the copy column would obliterate that glow —
+ * a load-bearing visual regression. Instead we mix --color-bg with
+ * `transparent` at 78% so the scrim is dense enough to still quiet the
+ * poster texture under copy (the poster's dots use --color-text-dim, so
+ * ~22% pass-through leaves them well below the AA-normal foreground the
+ * lede paints in), while the body radial glow reads through at the
+ * outer edge exactly as it did pre-P2. Same mix pattern is already used
+ * for the nav backdrop in style.css and primitives.css.
+ *
+ * Stacking: .hero-bg has `position: absolute; z-index: 0` so it forms
+ * its own stacking context. The ::after (z-index: 1) sits above the
+ * poster + canvas siblings but stays contained inside .hero-bg. In the
+ * parent .hero stacking context .hero-copy is at z-index: 1 and remains
+ * above the whole .hero-bg subtree — no additional stacking work needed.
+ * ===================================================================== */
+.hero-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-bg) 78%, transparent) 0%,
+    color-mix(in srgb, var(--color-bg) 78%, transparent) 38%,
+    transparent 62%
+  );
+  z-index: 1;
+}
+
+@media (max-width: 900px) {
+  .hero-bg::after {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--color-bg) 78%, transparent) 0%,
+      color-mix(in srgb, var(--color-bg) 78%, transparent) 32%,
+      transparent 62%
+    );
+  }
+}
+
+
+/* =====================================================================
+ * 8) .sr-only — screen-reader-only text primitive.
+ * ---------------------------------------------------------------------
+ * primitives.css ships .visually-hidden with the same effect, but the
+ * hero spec §G.2 explicitly names .sr-only for the accessibility
+ * clarifier inside .hero-copy. We ship both names so either can be used
+ * without renaming. Standard clip-based pattern; keeps the element in
+ * the a11y tree while removing it from visual layout.
+ * ===================================================================== */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}

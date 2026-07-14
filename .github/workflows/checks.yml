@@ -26,6 +26,21 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      - name: Perf-budget gate (Lighthouse + first-view size)
+        # ADR 0003 hard budgets: Lighthouse perf >= 95 mobile, a11y >= 98,
+        # LCP < 2s, first-view < 200KB gz, tokens.css < 15KB, hero.js
+        # gz <= 60KB, inline poster <= 10KB. --strict makes any FAIL row
+        # in docs/BUDGETS.md exit non-zero and block the PR.
+        run: npm run gate:budgets:ci
+
+      - name: Upload budgets report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: budgets-report
+          path: docs/BUDGETS.md
+          if-no-files-found: ignore
+
       - name: Run tests
         run: npm test
 
