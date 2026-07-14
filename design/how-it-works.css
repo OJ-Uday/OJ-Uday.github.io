@@ -1,0 +1,384 @@
+/* ═══════════════════════════════════════════════════════════════════════
+ * design/how-it-works.css
+ *
+ * Scrollytelling section for #how-it-works — six stages of vetlock's
+ * pipeline. Every color = var(--*). No hardcoded hexes here.
+ *
+ * PROGRESSIVE ENHANCEMENT — the DOM ships BOTH a sticky rail of stage
+ * SVGs (.hiw__viz) AND a per-stage inline SVG next to each explanation
+ * (.hiw__stage-svg). Which one is visible depends on capability:
+ *
+ *   no JS               → sticky rail hidden; inline SVGs visible; single column.
+ *   JS, narrow viewport → sticky rail hidden; inline SVGs visible; single column.
+ *   JS, wide viewport   → sticky rail visible (position:sticky); inline SVGs hidden.
+ *
+ * REDUCED MOTION — the CSS transitions consume --dur-* tokens which
+ * tokens.css already flattens to ~0.01ms under prefers-reduced-motion,
+ * so the sticky-rail stage swap becomes an instant cut for free. No
+ * per-selector guard needed.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* Off-screen symbol library is unused in this build (we ship one SVG per
+   stage inline for clarity + selectable, not `<use>`-referenced), but we
+   defensively hide it here in case a future refactor adopts it. */
+.hiw__symbols { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+.hiw {
+  /* Same section rhythm as the rest of the page — see style.css `section`. */
+  padding-top: var(--space-8);
+}
+
+.hiw__intro {
+  max-width: 34em;
+  margin-bottom: var(--space-6);
+}
+.hiw__intro h2 { margin-top: 4px; }
+.hiw__lede {
+  color: var(--muted);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-body);
+  margin: 0;
+}
+.hiw__lede em { color: var(--accent); font-style: normal; }
+.hiw__lede strong { color: var(--text); }
+
+/* ── grid layout ─────────────────────────────────────────────────────── */
+/* Default (no JS, or narrow viewport with JS): single column. */
+.hiw__grid {
+  display: block;
+  position: relative;
+}
+
+/* Sticky viz column — hidden by default; shown only when JS+wide-viewport
+   makes the scrollytelling meaningful. */
+.hiw__viz-col {
+  display: none;
+}
+
+/* JS + wide viewport → two-column layout with sticky visual. */
+@media (min-width: 900px) {
+  html.js .hiw__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-7);
+    align-items: start;
+  }
+  html.js .hiw__viz-col {
+    display: block;
+    position: sticky;
+    /* Sit below the sticky nav (~56px) with a comfortable gap. */
+    top: 96px;
+    /* Match the viz aspect so it never overshoots the viewport. */
+    max-height: calc(100vh - 128px);
+  }
+  /* Inline per-stage SVGs are redundant visually when the sticky rail is
+     showing — but the sticky-rail frames are all aria-hidden and only the
+     inline .hiw__stage-svg elements carry role="img" + aria-label, so we
+     must NOT remove them from the accessibility tree. Instead, collapse
+     them to visually-hidden geometry: they stay in the a11y tree (screen
+     readers announce each stage's aria-label) while taking zero visual
+     space and no layout. `display:none` would prune them from the a11y
+     tree and leave desktop+JS users with no SVG description at all. */
+  html.js .hiw__stage-svg {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+    pointer-events: none;
+  }
+}
+
+/* ── sticky visualization frame (JS mode) ────────────────────────────── */
+.hiw__viz {
+  position: relative;
+  width: 100%;
+  /* Match the SVG viewBox aspect ratio (320:240) so absolute-positioned
+     frames don't collapse. */
+  aspect-ratio: 320 / 240;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.hiw__frame {
+  position: absolute;
+  inset: var(--space-4);
+  width: calc(100% - var(--space-4) * 2);
+  height: calc(100% - var(--space-4) * 2);
+  opacity: 0;
+  transform: scale(0.98);
+  transition:
+    opacity   var(--dur-slow) var(--ease-standard),
+    transform var(--dur-slow) var(--ease-standard);
+  pointer-events: none;
+}
+.hiw__grid[data-active-stage="1"] .hiw__frame[data-stage="1"],
+.hiw__grid[data-active-stage="2"] .hiw__frame[data-stage="2"],
+.hiw__grid[data-active-stage="3"] .hiw__frame[data-stage="3"],
+.hiw__grid[data-active-stage="4"] .hiw__frame[data-stage="4"],
+.hiw__grid[data-active-stage="5"] .hiw__frame[data-stage="5"],
+.hiw__grid[data-active-stage="6"] .hiw__frame[data-stage="6"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Progress rail below the sticky viz — six pips that light up as we
+   advance. Purely decorative; nav is by scroll, not by click. */
+.hiw__pips {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  justify-content: center;
+}
+.hiw__pip {
+  width: 28px;
+  height: 4px;
+  border-radius: var(--radius-full);
+  background: var(--line-strong);
+  transition: background var(--dur-base) var(--ease-standard);
+}
+.hiw__grid[data-active-stage="1"] .hiw__pip[data-pip="1"],
+.hiw__grid[data-active-stage="2"] .hiw__pip[data-pip="2"],
+.hiw__grid[data-active-stage="3"] .hiw__pip[data-pip="3"],
+.hiw__grid[data-active-stage="4"] .hiw__pip[data-pip="4"],
+.hiw__grid[data-active-stage="5"] .hiw__pip[data-pip="5"],
+.hiw__grid[data-active-stage="6"] .hiw__pip[data-pip="6"] {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+/* Pips before the active one stay lit at a lower intensity so you can
+   see how far you've come. Uses a general-sibling walk on the reverse. */
+.hiw__grid[data-active-stage="2"] .hiw__pip[data-pip="1"],
+.hiw__grid[data-active-stage="3"] .hiw__pip[data-pip="1"],
+.hiw__grid[data-active-stage="3"] .hiw__pip[data-pip="2"],
+.hiw__grid[data-active-stage="4"] .hiw__pip[data-pip="1"],
+.hiw__grid[data-active-stage="4"] .hiw__pip[data-pip="2"],
+.hiw__grid[data-active-stage="4"] .hiw__pip[data-pip="3"],
+.hiw__grid[data-active-stage="5"] .hiw__pip[data-pip="1"],
+.hiw__grid[data-active-stage="5"] .hiw__pip[data-pip="2"],
+.hiw__grid[data-active-stage="5"] .hiw__pip[data-pip="3"],
+.hiw__grid[data-active-stage="5"] .hiw__pip[data-pip="4"],
+.hiw__grid[data-active-stage="6"] .hiw__pip[data-pip="1"],
+.hiw__grid[data-active-stage="6"] .hiw__pip[data-pip="2"],
+.hiw__grid[data-active-stage="6"] .hiw__pip[data-pip="3"],
+.hiw__grid[data-active-stage="6"] .hiw__pip[data-pip="4"],
+.hiw__grid[data-active-stage="6"] .hiw__pip[data-pip="5"] {
+  background: var(--accent-dim);
+}
+
+/* ── stages column ──────────────────────────────────────────────────── */
+.hiw__stages {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-6);
+}
+.hiw__stage {
+  display: block;
+  padding: var(--space-5);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  scroll-margin-top: 96px;
+  /* content-visibility is safe here — stage sizing is stable (aspect-ratio
+     images below), so we can lazy-paint offscreen tiles for perf. */
+  content-visibility: auto;
+  contain-intrinsic-size: 380px;
+}
+.hiw__stage:target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+/* Active-stage highlight (JS mode only, wide viewports where the rail
+   drives the story). Adds a quiet accent stripe on the left. */
+@media (min-width: 900px) {
+  html.js .hiw__grid[data-active-stage="1"] .hiw__stage[data-stage="1"],
+  html.js .hiw__grid[data-active-stage="2"] .hiw__stage[data-stage="2"],
+  html.js .hiw__grid[data-active-stage="3"] .hiw__stage[data-stage="3"],
+  html.js .hiw__grid[data-active-stage="4"] .hiw__stage[data-stage="4"],
+  html.js .hiw__grid[data-active-stage="5"] .hiw__stage[data-stage="5"],
+  html.js .hiw__grid[data-active-stage="6"] .hiw__stage[data-stage="6"] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-glow);
+  }
+}
+.hiw__stage-num {
+  display: inline-block;
+  color: var(--accent);
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+}
+.hiw__stage h3 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-h4);
+  letter-spacing: var(--tracking-tight);
+}
+.hiw__stage p {
+  margin: 0;
+  color: var(--muted);
+  line-height: var(--lh-body);
+}
+.hiw__stage p strong { color: var(--text); }
+.hiw__stage p em { color: var(--accent); font-style: normal; }
+.hiw__stage code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--panel-2);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
+
+/* Inline per-stage SVG (visible without JS, or on narrow viewports). */
+.hiw__stage-svg {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  margin-top: var(--space-4);
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+
+/* Shared SVG element styles — the six frames are hand-authored below in
+   index.html so their palette can be one place. These utility classes
+   keep repeated attributes tight inside the SVGs themselves.
+
+   Palette rule (packet): every fill/stroke here MUST resolve to a
+   design token via var(--*). Never hardcode a hex. The
+   scripts/no-hardcoded-colors.mjs gate scans CSS + SVG for literal
+   #rgb/#rrggbb — a stray hex will fail CI. */
+.hiw__gfx text {
+  font-family: var(--font-mono);
+  fill: var(--text);
+  /* SVG font size follows the viewBox — 9px here scales to ~11-14px in
+     display size (SVG width ~360-480px given 320-wide viewBox). */
+  font-size: 9px;
+}
+.hiw__gfx .n-label-sm { font-size: 8px; fill: var(--muted); }
+.hiw__gfx .n-callout { font-size: 9px; fill: var(--accent); }
+.hiw__gfx .n-warn { fill: var(--danger); }
+.hiw__gfx .n-info { fill: var(--info); }
+
+/* --- graph primitives shared across the 6 stage SVGs ------------------
+   Nodes are `<rect>` or `<circle>` with .g-node (base) or .g-node--emph
+   (this stage's spotlight). Edges are `<path>` or `<line>` with .g-edge
+   / .g-edge--flow (animated dashes for a "packet in flight" beat). A
+   .g-edge--warn variant is reserved for the verdict-frame BLOCK arrow. */
+.hiw__gfx .g-node {
+  fill: var(--panel-2);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.hiw__gfx .g-node--emph {
+  fill: var(--accent-dim);
+  stroke: var(--accent);
+  stroke-width: 1.25;
+}
+.hiw__gfx .g-node--warn {
+  fill: var(--danger-dim);
+  stroke: var(--danger);
+  stroke-width: 1.25;
+}
+.hiw__gfx .g-node--info {
+  fill: var(--info-dim);
+  stroke: var(--info);
+  stroke-width: 1.25;
+}
+.hiw__gfx .g-edge {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.hiw__gfx .g-edge--emph {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.25;
+}
+.hiw__gfx .g-edge--warn {
+  fill: none;
+  stroke: var(--danger);
+  stroke-width: 1.25;
+}
+.hiw__gfx .g-edge--flow {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-dasharray: 4 6;
+  animation: hiw-flow 1.6s linear infinite;
+}
+.hiw__gfx .g-arrow { fill: var(--accent); }
+.hiw__gfx .g-arrow--warn { fill: var(--danger); }
+.hiw__gfx .g-arrow--muted { fill: var(--line-strong); }
+
+/* Pill (verdict shape) — filled version and outlined-only. */
+.hiw__gfx .g-pill { fill: var(--panel-2); stroke: var(--line-strong); stroke-width: 1; }
+.hiw__gfx .g-pill--clean { fill: var(--accent-dim); stroke: var(--accent); stroke-width: 1.25; }
+.hiw__gfx .g-pill--warn  { fill: var(--warn-dim); stroke: var(--warn); stroke-width: 1.25; }
+.hiw__gfx .g-pill--block { fill: var(--danger-dim); stroke: var(--danger); stroke-width: 1.5; }
+
+/* Text-on-emphatic-shape swatches — verdict labels need to keep AA
+   contrast against their fill, which is the token surface (not the
+   accent). Using --accent/--danger for the *text* on their soft-fill
+   siblings keeps the AA math the same for both themes. */
+.hiw__gfx .t-on-clean { fill: var(--accent); font-weight: 600; }
+.hiw__gfx .t-on-warn  { fill: var(--warn);   font-weight: 600; }
+.hiw__gfx .t-on-block { fill: var(--danger); font-weight: 600; }
+
+/* Diff hunk markers used in stage 1. Add/remove glyphs sit inline with
+   text; the +/- fills carry the meaning, but the shapes carry redundant
+   iconic content so a colorblind viewer still reads the diff. */
+.hiw__gfx .g-diff-add { fill: var(--accent); }
+.hiw__gfx .g-diff-del { fill: var(--danger); }
+.hiw__gfx .g-diff-add-bg { fill: var(--accent-dim); opacity: 0.55; }
+.hiw__gfx .g-diff-del-bg { fill: var(--danger-dim); opacity: 0.55; }
+
+/* Grid rules & tick marks (used in a couple of frames for context). */
+.hiw__gfx .g-rule { stroke: var(--line); stroke-width: 0.5; }
+
+/* Stage-6 verdict frame uses a bigger label; keep it inside the class
+   scope so the base 9px rule above doesn't override it. */
+.hiw__gfx .g-verdict-label { font-size: 12px; letter-spacing: 0.06em; }
+
+/* Ambient breathing motion for spotlighted nodes — a subtle "this is
+   what stage N focuses on" pulse. Under reduced motion this collapses
+   to a static state (see the reduced-motion block below). */
+@keyframes hiw-flow {
+  to { stroke-dashoffset: -20; }
+}
+@keyframes hiw-breathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.65; }
+}
+.hiw__gfx .g-breathe {
+  animation: hiw-breathe 2.4s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hiw__gfx .g-edge--flow { animation: none; stroke-dasharray: 0; }
+  .hiw__gfx .g-breathe { animation: none; }
+}
+
+/* ── prefers-reduced-motion carve-outs ──────────────────────────────── */
+/* tokens.css flattens --dur-* variables to ~0ms under reduced motion,
+   which already collapses the .hiw__frame opacity transitions. We add
+   an explicit belt-and-suspenders here so any transform hint doesn't
+   fire either. */
+@media (prefers-reduced-motion: reduce) {
+  .hiw__frame { transition: none; transform: none; }
+  .hiw__pip { transition: none; }
+}

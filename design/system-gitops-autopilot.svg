@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 260" role="img"
+     aria-label="Zero-touch delivery loop — a bot-authored bump PR passes policy-gated approval, is auto-merged, observed for drift, and pinned back to last-known-good on divergence."
+     class="sys-diagram sd-loop" preserveAspectRatio="xMidYMid meet" focusable="false">
+  <title>Zero-touch delivery loop</title>
+  <style>
+    .sd-loop .sd-node       { fill: var(--color-surface, transparent); stroke: var(--color-border-strong, currentColor); stroke-width: 1.25; }
+    .sd-loop .sd-node--emph { fill: var(--color-accent-soft, transparent); stroke: var(--color-accent, currentColor); stroke-width: 1.5; }
+    .sd-loop .sd-title      { fill: currentColor; font-family: var(--font-mono, ui-monospace, SFMono-Regular, monospace); font-size: 14px; font-weight: 600; text-anchor: middle; letter-spacing: 0.02em; }
+    .sd-loop .sd-cap        { fill: var(--color-text-muted, currentColor); font-family: var(--font-sans, system-ui, sans-serif); font-size: 11px; text-anchor: middle; }
+    .sd-loop .sd-path       { fill: none; stroke: var(--color-accent, currentColor); stroke-width: 2; stroke-linecap: round; }
+    .sd-loop .sd-flow-dot   { fill: var(--color-accent, currentColor); }
+    .sd-loop .sd-rollback   { stroke: var(--color-warn, currentColor); stroke-dasharray: 5 6; }
+    .sd-loop .sd-rollback-dot { fill: var(--color-warn, currentColor); }
+    .sd-loop .sd-arrow      { fill: var(--color-accent, currentColor); }
+    .sd-loop .sd-arrow--warn{ fill: var(--color-warn, currentColor); }
+
+    /* Traveling dots — hint at motion around the reconciliation loop. */
+    .sd-loop .sd-flow-dot     { animation: sd-flow-loop 6s linear infinite; }
+    .sd-loop .sd-rollback-dot { animation: sd-flow-rollback 3s linear infinite; }
+    @keyframes sd-flow-loop {
+      0%   { transform: translate(90px,  60px); }
+      25%  { transform: translate(250px, 60px); }
+      50%  { transform: translate(410px, 60px); }
+      75%  { transform: translate(570px, 60px); }
+      100% { transform: translate(570px, 180px); }
+    }
+    @keyframes sd-flow-rollback {
+      0%   { transform: translate(500px, 180px); opacity: 0.2; }
+      50%  { transform: translate(300px, 130px); opacity: 1; }
+      100% { transform: translate(120px, 60px); opacity: 0.2; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sd-loop .sd-flow-dot, .sd-loop .sd-rollback-dot { animation: none; visibility: hidden; }
+    }
+  </style>
+  <defs>
+    <marker id="sd-loop-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="sd-arrow"/>
+    </marker>
+    <marker id="sd-loop-arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" class="sd-arrow--warn"/>
+    </marker>
+  </defs>
+
+  <!-- Top row: Bump -> Approve -> Land -> Observe -->
+  <rect class="sd-node--emph" x="20"  y="30" width="140" height="60" rx="10"/>
+  <text class="sd-title" x="90"  y="55">Bump</text>
+  <text class="sd-cap"   x="90"  y="75">Bot authors bump PR.</text>
+
+  <rect class="sd-node" x="180" y="30" width="140" height="60" rx="10"/>
+  <text class="sd-title" x="250" y="55">Approve</text>
+  <text class="sd-cap"   x="250" y="75">Policy-gated.</text>
+
+  <rect class="sd-node" x="340" y="30" width="140" height="60" rx="10"/>
+  <text class="sd-title" x="410" y="55">Land</text>
+  <text class="sd-cap"   x="410" y="75">Auto-merge.</text>
+
+  <rect class="sd-node" x="500" y="30" width="140" height="60" rx="10"/>
+  <text class="sd-title" x="570" y="55">Observe</text>
+  <text class="sd-cap"   x="570" y="75">Drift detector.</text>
+
+  <!-- Rollback node (bottom right) -->
+  <rect class="sd-node--emph" x="500" y="150" width="140" height="60" rx="10"/>
+  <text class="sd-title" x="570" y="175">Rollback</text>
+  <text class="sd-cap"   x="570" y="195">Pin to last-good.</text>
+
+  <!-- Forward arrows -->
+  <line class="sd-path" x1="160" y1="60" x2="176" y2="60" marker-end="url(#sd-loop-arrow)"/>
+  <line class="sd-path" x1="320" y1="60" x2="336" y2="60" marker-end="url(#sd-loop-arrow)"/>
+  <line class="sd-path" x1="480" y1="60" x2="496" y2="60" marker-end="url(#sd-loop-arrow)"/>
+
+  <!-- Observe -> Rollback (on drift) -->
+  <line class="sd-path sd-rollback" x1="570" y1="90" x2="570" y2="146" marker-end="url(#sd-loop-arrow-warn)"/>
+
+  <!-- Rollback -> Bump (close the loop) -->
+  <path class="sd-path sd-rollback"
+        d="M 500 180 C 300 200, 150 160, 90 90"
+        marker-end="url(#sd-loop-arrow-warn)"/>
+
+  <!-- Traveling flow dot (forward path) -->
+  <circle class="sd-flow-dot" cx="0" cy="0" r="4"/>
+
+  <!-- Traveling rollback dot -->
+  <circle class="sd-rollback-dot" cx="0" cy="0" r="4"/>
+
+  <!-- On-drift label -->
+  <text class="sd-cap" x="600" y="125" style="fill: var(--color-warn, currentColor);">on drift</text>
+
+  <!-- Caption strip -->
+  <text class="sd-cap" x="400" y="245" style="font-size:12px;">
+    Bump PR &#8594; policy-gated approval &#8594; auto-merge &#8594; drift detection &#8594; pin-back rollback
+  </text>
+</svg>

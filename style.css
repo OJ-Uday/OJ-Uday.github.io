@@ -276,7 +276,7 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   .reveal { opacity: 1; transform: none; transition: none; }
-  .dot, .pulse, .tag-dot { animation: none; }
+  .dot, .pulse, .tag-dot, .proof-dot { animation: none; }
   .btn, .card, .stat, .sp-fill, .dropzone { transition: none; }
   .console::before { display: none; }
 }
@@ -304,6 +304,105 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
   .skill-row { grid-template-columns: 1fr; gap: 4px; }
   .t-date { margin-left: 0; width: 100%; }
   /* (scanner grid overrides moved to design/scan.css) */
+}
+
+/* ── proof strip ────────────────────────────────────────────────────
+   Rendered by design/proof.js — a lazy-loaded module that fetches each
+   tile's value from a live source and hides the tile on any error,
+   missing data, or below-threshold value (packet rule #4: never fake
+   a number). Tiles start [hidden] and JS reveals only what verified.
+
+   Empty state: with JS OFF or every fetch failing, the .proof-strip is
+   an empty grid — no visual claim is made. That's the correct
+   progressive-enhancement behavior for an "honest" section.
+
+   The strip sits between #scan and the .stats highlights. On mobile
+   it collapses to 2 columns, then 1. No fixed heights: if only two
+   tiles survive fetch, the row centers them; grid tracks size to
+   content. */
+.proof { padding-top: 24px; padding-bottom: 8px; }
+.proof-head {
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.proof-h {
+  font-size: 1.35rem; letter-spacing: -0.01em; margin: 0;
+  display: inline-flex; align-items: baseline; gap: 10px;
+}
+.proof-h .accent { color: var(--accent); }
+.proof-sub-lede { color: var(--muted); font-size: 0.82rem; margin: 0; }
+
+.proof-strip {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+}
+.proof-tile {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex; flex-direction: column; gap: 4px;
+  transition: transform var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard);
+}
+.proof-tile:hover { transform: translateY(-2px); border-color: var(--accent); }
+/* Number: uses the same monospace + accent color language as .stat .num
+   so the two rows read as one system. */
+.proof-num {
+  font-size: 1.55rem; font-weight: 700; color: var(--accent);
+  letter-spacing: -0.02em; line-height: 1.1;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.proof-sub { color: var(--text); font-size: 0.85rem; }
+.proof-src { color: var(--muted); font-size: 0.72rem; letter-spacing: 0.02em; }
+
+/* Health tile paints its own dot in the number slot rather than a
+   count. The dot pulses to make "live" legible without a caption. */
+.proof-tile--health .proof-num { font-size: 1.05rem; text-transform: lowercase; }
+.proof-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+  animation: pulse 2.4s infinite;
+}
+
+@media (max-width: 900px) {
+  .proof-strip { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 520px) {
+  .proof-strip { grid-template-columns: 1fr; }
+}
+
+/* ── LCP protection: below-fold sections deferred from initial paint ──
+   Each of these sections carries substantial inline SVG mass (systems
+   diagrams, red-team timeline, project preview strips). Applying
+   content-visibility: auto tells the browser to skip layout + paint
+   for these subtrees when they're off-screen, letting first paint
+   commit as soon as the hero + scan chrome are ready. The
+   contain-intrinsic-size reserves plausible height so the scrollbar
+   doesn't reflow when the section becomes visible.
+
+   How-it-works stages already apply this per-stage (see
+   design/how-it-works.css); this covers the remaining large
+   content-heavy sections. */
+#systems,
+#red-team,
+#projects,
+#experience {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 800px;
+}
+/* #how-it-works is the largest below-scan section (~32 KB markup + many
+   inline SVGs across six sticky stages); #proof sits between scan and
+   systems and is SVG-heavy for its size. Reserving realistic intrinsic
+   sizes keeps scrollbar+anchor jumps stable while excluding both from
+   first-paint layout work. */
+#how-it-works {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 1200px;
+}
+#proof {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 200px;
 }
 
 /* ── print ──────────────────────────────────────────────────────────── */
