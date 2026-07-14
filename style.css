@@ -130,6 +130,15 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
   overflow: hidden; box-shadow: var(--shadow);
   position: relative;
+  /* Reserve the panel's final box on first paint. Without this, Lighthouse's
+     mobile emulation (4x CPU + slow-4G) measures a ~380px downward shift as
+     .hero-copy resolves its height under the render-blocking stylesheet chain,
+     pushing CLS from 0.000 → 0.470. The value covers .console-bar (~40px) +
+     .feed (--feed-height, 260/220px on wide/narrow) + .console-foot (~28px) +
+     borders. `contain: layout` isolates the panel from parent reflows so a
+     future change upstream can't reintroduce the shift. */
+  min-height: 303px;
+  contain: layout;
 }
 .console::before {
   /* Subtle CRT-scanline flourish. Rendered behind content via ::before + pointer-events none. */
@@ -443,9 +452,18 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
 }
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; min-height: 0; gap: 28px; }
+  /* Reserve .hero-copy's final rendered height so late CSS resolution
+     (fluid clamp() type + backdrop-blur nav + our render-blocking token
+     chain) doesn't push .console-col down after first paint. The value
+     covers kicker + fluid H1 (two lines at mobile scale) + lede paragraph
+     + CTA row on a 412px viewport. Diagnosed via Lighthouse's
+     layout-shifts audit — the entire CLS 0.470 comes from a single
+     downward shift of .console once .hero-copy resolves. */
+  .hero-copy { min-height: 520px; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .cards, .cards.grid2 { grid-template-columns: 1fr; }
   .feed { height: 220px; }
+  .console { min-height: 260px; }  /* narrower panel + smaller feed = smaller reserved slot */
   .skill-row { grid-template-columns: 1fr; gap: 4px; }
   .t-date { margin-left: 0; width: 100%; }
   .scan-inputs { grid-template-columns: 1fr; }

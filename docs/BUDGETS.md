@@ -10,30 +10,30 @@ The script starts a local static server, runs Lighthouse in both mobile (slow-4G
 
 | Metric | Baseline | Target | Status |
 | --- | --- | --- | --- |
-| Lighthouse Perf (mobile, slow 4G) | 79 | >= 95 | FAIL |
+| Lighthouse Perf (mobile, slow 4G) | 80 | >= 95 | FAIL |
 | Lighthouse Perf (desktop, no throttle) | 96 | >= 98 | FAIL |
 | Lighthouse Accessibility | 100 | >= 98 | PASS |
-| LCP (mobile, slow 4G) | 1656 ms | < 2000 ms | PASS |
-| CLS (mobile) | 0.470 | < 0.05 | FAIL |
-| First-view transfer (gz est.) | 32.6 KB | < 200 KB | PASS |
+| LCP (mobile, slow 4G) | 1657 ms | < 2000 ms | PASS |
+| CLS (mobile) | 0.421 | < 0.05 | FAIL |
+| First-view transfer (gz est.) | 33.3 KB | < 200 KB | PASS |
 | design/tokens.css size | 16.0 KB | < 15 KB | FAIL |
 
 ## Detail: Lighthouse
 
 | Category | Mobile (slow 4G) | Desktop (no throttle) |
 | --- | --- | --- |
-| Performance | 79 | 96 |
+| Performance | 80 | 96 |
 | Accessibility | 100 | 100 |
 | Best Practices | 100 | 100 |
 | SEO | 100 | 100 |
 
 | Metric | Mobile | Desktop |
 | --- | --- | --- |
-| LCP | 1656 ms | 54 ms |
-| FCP | 1656 ms | 54 ms |
+| LCP | 1657 ms | 43 ms |
+| FCP | 1657 ms | 43 ms |
 | TBT | 0 ms | 0 ms |
-| CLS | 0.470 | 0.126 |
-| Total transferred (LH) | 130.8 KB | 130.8 KB |
+| CLS | 0.421 | 0.123 |
+| Total transferred (LH) | 132.9 KB | 132.9 KB |
 | Requests (LH) | 7 | 7 |
 
 ## Detail: First-view payload (raw HTTP)
@@ -45,14 +45,14 @@ Same-origin assets that block first paint, byte-counted with a raw GET.
 | `/` | html | 26.3 KB |
 | `/design/tokens.css` | css | 16.0 KB |
 | `/design/primitives.css` | css | 17.7 KB |
-| `style.css` | css | 27.5 KB |
-| `app.js` | js | 33.6 KB |
-| **Total (raw)** |  | **121.0 KB** |
-| **Total (gz est.)** |  | **32.6 KB** |
+| `style.css` | css | 28.8 KB |
+| `app.js` | js | 34.4 KB |
+| **Total (raw)** |  | **123.1 KB** |
+| **Total (gz est.)** |  | **33.3 KB** |
 
 ---
 
-Generated: 2026-07-14T09:09:59.146Z
+Generated: 2026-07-14T10:18:59.770Z
 
 Tool versions:
 - node v20.19.2
