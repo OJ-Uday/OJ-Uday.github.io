@@ -1,0 +1,1017 @@
+/* =====================================================================
+ * design/scan.css — P3 scanner showstopper UI styling.
+ * See P3 spec (P3 Scanner Showstopper) and docs/adrs/0001-0002.
+ *
+ * WHY THIS FILE EXISTS
+ *   P3 expands the scanner from a "before → after" diff-only UX into a
+ *   tabbed profile-or-diff shell with permalink replay, ecosystem-aware
+ *   chips, a mini-graph reaction, and CLI/JSON copy affordances. Rather
+ *   than bloat style.css (already ~24 KB and touching every legacy
+ *   selector), the new scanner surface lives here. Load order:
+ *
+ *     <link rel="stylesheet" href="/design/tokens.css">
+ *     <link rel="stylesheet" href="/design/primitives.css">
+ *     <link rel="stylesheet" href="/design/scan.css">   ← insert here
+ *     <link rel="stylesheet" href="style.css">
+ *
+ *   Loading scan.css AFTER primitives and BEFORE style.css keeps the
+ *   existing legacy scanner selectors (.dropzone, .sr-body, .sp-*) in
+ *   style.css authoritative for the diff-only look, while the new
+ *   selectors added by P3 (.scan-mode, .scan-permalink-banner, …) come
+ *   from this file with no conflict.
+ *
+ * TOKEN DISCIPLINE
+ *   Every color, spacing, radius, duration, and shadow resolves through
+ *   a var(--*) reference from tokens.css. `scripts/no-hardcoded-colors.mjs`
+ *   is the gate — this file must pass. If you need a new value, add it
+ *   to tokens.css first.
+ *
+ * MOTION DISCIPLINE
+ *   Motion consumes --dur-* / --ease-* tokens so the reduced-motion
+ *   override baked into tokens.css collapses every animation/transition
+ *   to ~0ms automatically. The one keyframed pulse (.sr-mini-graph
+ *   .is-block) is additionally guarded with an explicit
+ *   `@media (prefers-reduced-motion: reduce)` block for defence in depth,
+ *   because SVG `<animate>` fallbacks may not always inherit the
+ *   duration-token flattening.
+ *
+ * CLASS-NAME DUAL SPELLING
+ *   The P3 spec and downstream authors use two spellings for a couple
+ *   of components (e.g. `.scan-mode-tabs` in the parent brief vs.
+ *   `.scan-mode` in the spec DOM sketch). Rather than fork the CSS,
+ *   every rule below binds BOTH selectors so either HTML author is
+ *   covered — the same pattern primitives.css already uses for legacy
+ *   compat (.is-visible / .in).
+ * ===================================================================== */
+
+
+/* =====================================================================
+ * 1) MODE TABS — .scan-mode / .scan-mode-tabs
+ * ---------------------------------------------------------------------
+ * A two-tab strip that switches between "Capability profile" (single
+ * artifact) and "Diff" (before → after). Renders as a horizontal
+ * pill row with a filled active tab (accent-soft wash + accent text)
+ * and clean :focus-visible ring. `role="tab"` + `aria-selected` drive
+ * the state — no JS class needed for base styling.
+ * ===================================================================== */
+.scan-mode,
+.scan-mode-tabs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  margin: 0 0 var(--space-4);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.scan-mode-tab,
+.scan-mode-tabs button[role="tab"] {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-2) var(--space-4);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 600;
+  line-height: var(--lh-tight);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    color      var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
+}
+
+.scan-mode-tab:hover,
+.scan-mode-tabs button[role="tab"]:hover {
+  color: var(--color-text);
+}
+
+.scan-mode-tab:focus-visible,
+.scan-mode-tabs button[role="tab"]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Active state — driven by aria-selected="true" (spec §A.1) so the tab
+   is authoritative in the a11y tree and the visual is a consequence of
+   state, not a class the JS has to toggle in two places. */
+.scan-mode-tab[aria-selected="true"],
+.scan-mode-tabs button[role="tab"][aria-selected="true"],
+.scan-mode-tab.is-active,
+.scan-mode-tabs button[role="tab"].is-active {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  border-color: var(--color-accent-soft);
+}
+
+/* The secondary caption ("single artifact" / "before → after") sits
+   below the primary label — smaller, muted, monospaced. */
+.scan-mode-sub {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  font-weight: 400;
+  color: var(--color-text-dim);
+  letter-spacing: var(--tracking-normal);
+}
+
+.scan-mode-tab[aria-selected="true"] .scan-mode-sub,
+.scan-mode-tabs button[role="tab"][aria-selected="true"] .scan-mode-sub,
+.scan-mode-tab.is-active .scan-mode-sub {
+  color: var(--color-accent);
+  opacity: 0.75;
+}
+
+
+/* =====================================================================
+ * 2) ECOSYSTEM CHIP — .sr-eco-chip / .scan-ecosystem-chip
+ * ---------------------------------------------------------------------
+ * Compact monospaced pill in the result header. Two variants:
+ *   .npm  → teal-tinted (fits with existing accent palette)
+ *   .pypi → warm-amber-tinted (visually distinct without introducing
+ *           a fresh brand color; PyPI's own yellow-blue is not in-scope
+ *           for the design system).
+ * Uses --color-*-soft tokens so the chip has a background wash in both
+ * themes without any raw hex.
+ * ===================================================================== */
+.sr-eco-chip,
+.scan-ecosystem-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-high);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: lowercase;
+  line-height: var(--lh-tight);
+}
+
+/* NPM: brand's own teal is the accent — reuse it. */
+.sr-eco-chip.npm,
+.scan-ecosystem-chip.npm {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-soft);
+}
+
+/* PyPI: warm-tinted so npm vs pypi is visually distinguishable at
+   a glance without adding a new brand color. */
+.sr-eco-chip.pypi,
+.scan-ecosystem-chip.pypi {
+  color: var(--color-warn);
+  background: var(--color-warn-soft);
+  border-color: var(--color-warn-soft);
+  text-transform: none;    /* preserve "PyPI" mixed case */
+}
+
+
+/* =====================================================================
+ * 3) PERMALINK BANNER — .scan-permalink-banner
+ * ---------------------------------------------------------------------
+ * Sits above #scan-result in read-only mode after ?scan=<id> is loaded.
+ * A single-row chip: "Ran on <date>" + [Try your own scan] + [Copy link].
+ * Uses the raised-surface token so it visually anchors above the result
+ * card without competing with it, and a subtle accent-tinted left border
+ * to signal the read-only affordance.
+ * ===================================================================== */
+.scan-permalink-banner,
+.scan-readonly-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin: 0 0 var(--space-3);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+}
+
+.scan-permalink-banner__label,
+.scan-permalink-banner .spb-label,
+.scan-readonly-banner__label,
+.scan-readonly-banner .srb-label,
+.scan-readonly-banner .srb-msg {
+  color: var(--color-text-muted);
+}
+
+.scan-permalink-banner__date,
+.scan-permalink-banner time,
+.scan-permalink-banner .spb-date,
+.scan-readonly-banner__date,
+.scan-readonly-banner time,
+.scan-readonly-banner .srb-date {
+  color: var(--color-text);
+  font-family: var(--font-mono);
+}
+
+/* Actions cluster at the end of the banner ("Try your own", "Copy link"). */
+.scan-permalink-banner__actions,
+.scan-permalink-banner .spb-actions,
+.scan-readonly-banner__actions,
+.scan-readonly-banner .srb-actions {
+  display: inline-flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.scan-permalink-banner a,
+.scan-permalink-banner button,
+.scan-readonly-banner a,
+.scan-readonly-banner button {
+  color: var(--color-accent);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard);
+}
+
+.scan-permalink-banner a:hover,
+.scan-permalink-banner button:hover,
+.scan-readonly-banner a:hover,
+.scan-readonly-banner button:hover {
+  color: var(--color-accent-2);
+  border-color: var(--color-accent-soft);
+  background: var(--color-accent-soft);
+}
+
+.scan-permalink-banner a:focus-visible,
+.scan-permalink-banner button:focus-visible,
+.scan-readonly-banner a:focus-visible,
+.scan-readonly-banner button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+
+/* ---------------------------------------------------------------------
+ * DEMO-ONLY BANNER — .scan-demo-banner
+ * Sits at the top of #panel-profile until live single-artifact scanning
+ * is unlocked (window.__VETLOCK_ENABLE_PROFILE_LIVE__). Signals to the
+ * user that their own lockfile drops are refused — only bundled fixtures
+ * run. Amber/warn tinted so it reads as a caution, not an error.
+ * ------------------------------------------------------------------ */
+.scan-demo-banner {
+  display: block;
+  padding: var(--space-3) var(--space-4);
+  margin: 0 0 var(--space-3);
+  background: var(--color-warn-soft);
+  border: 1px solid var(--color-warn);
+  border-left: 3px solid var(--color-warn);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+}
+.scan-demo-banner strong { color: var(--color-warn); }
+.scan-demo-banner em { font-style: normal; color: var(--color-accent); }
+
+
+/* =====================================================================
+ * 4) COPY-JSON + CLI HINT — .scan-copy-btn / .sr-share / .sr-cli
+ * ---------------------------------------------------------------------
+ * Two small inline actions that live in the result card:
+ *   • .scan-copy-btn / .sr-copy / .sr-share / .sr-cli-copy — same shape,
+ *     a compact ghost button that flashes "Copied" for ~1.4s.
+ *   • .sr-cli / .scan-cli-hint — a mono code line with the CLI
+ *     equivalent of the current scan; wraps at small viewports so the
+ *     result card never becomes horizontally scrollable.
+ * ===================================================================== */
+
+/* Compact ghost-shaped action button. Kept small so it sits inline in
+   .sr-head and .sr-foot without inflating either. Uses the "small
+   ghost" pattern established by legacy .btn.ghost.small in style.css
+   and re-expresses it in token terms for the new selectors. */
+.scan-copy-btn,
+.sr-share,
+.sr-cli-copy,
+.sr-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  background: transparent;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    color      var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
+}
+
+.scan-copy-btn:hover,
+.sr-share:hover,
+.sr-cli-copy:hover,
+.sr-copy:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.scan-copy-btn:focus-visible,
+.sr-share:focus-visible,
+.sr-cli-copy:focus-visible,
+.sr-copy:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.scan-copy-btn:disabled,
+.sr-share:disabled,
+.sr-cli-copy:disabled,
+.sr-copy:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Copied flash — parent JS toggles `.is-copied` for ~1400ms; the label
+   is swapped in JS, but the visual signal is driven purely by CSS so
+   the state renders even if the label swap is skipped by a11y readers. */
+.scan-copy-btn.is-copied,
+.sr-share.is-copied,
+.sr-cli-copy.is-copied,
+.sr-copy.is-copied {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+/* CLI hint block — sits inside .sr-foot. Mono code + inline copy
+   button. Wraps rather than horizontal-scrolls so a long corpus
+   command never breaks the result card layout on mobile. */
+.scan-cli-hint,
+.sr-foot .sr-cli-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+}
+
+.sr-foot-lbl {
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+}
+
+.sr-cli,
+.scan-cli-hint code {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  background: var(--code-bg);
+  color: var(--code-fg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Footnote under the CLI line (spec §F.2 — "(requires vetlock >= 0.4)"). */
+.sr-cli-note {
+  display: block;
+  flex-basis: 100%;
+  margin-top: var(--space-1);
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+  font-style: italic;
+}
+
+
+/* =====================================================================
+ * 5) RESULT DISCLOSURE — .sr-group as <details>/<summary>
+ * ---------------------------------------------------------------------
+ * Spec §B — on <= 480px, each severity group is a collapsed <details>;
+ * on wider screens they render open with no summary marker. The two
+ * layouts share the same DOM; media queries do the switching so JS
+ * doesn't have to.
+ *
+ * A wide-screen JS pass (spec §B.2) also sets `.open = true` on each
+ * <details> for a11y snapshot correctness — the CSS below already
+ * mirrors the visual, but the semantic tree stays authoritative.
+ * ===================================================================== */
+
+/* Summary layout — same on all viewports: dot + count + label. The
+   "tap to expand" hint hides on wide screens (see media query). */
+details.sr-group > summary,
+.sr-group > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  margin: 0 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  list-style: none;
+  outline: none;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+
+/* Remove the default triangle marker in every browser. */
+details.sr-group > summary::-webkit-details-marker { display: none; }
+details.sr-group > summary::marker { content: ""; }
+
+details.sr-group > summary:hover {
+  background: var(--color-surface-high);
+}
+
+details.sr-group > summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Severity dot — SVG-free, single element. Fills a token-tinted
+   circle so it never depends on a bitmap or icon font. */
+.sev-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-dim);
+  flex: 0 0 auto;
+}
+.sev-dot.sev-BLOCK { background: var(--color-danger); }
+.sev-dot.sev-WARN  { background: var(--color-warn); }
+.sev-dot.sev-INFO,
+.sev-dot.sev-CLEAN,
+.sev-dot.sev-OK    { background: var(--color-accent); }
+
+.sr-group-count strong {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+/* Compact per-severity roll-up shown at the top of #sr-meta (spec §B.3).
+   Rendered as [BLOCK 3 · WARN 1 · CLEAN 0] — a bracketed inline chip
+   that reads at a glance without expanding any group. */
+.sr-meta-rollup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px var(--space-2);
+  margin-right: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-high);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  letter-spacing: var(--tracking-wide);
+}
+.sr-meta-rollup .rollup-block { color: var(--color-danger); }
+.sr-meta-rollup .rollup-warn  { color: var(--color-warn); }
+.sr-meta-rollup .rollup-clean { color: var(--color-accent); }
+.sr-meta-rollup .rollup-sep   { color: var(--color-text-dim); }
+
+/* "tap to expand" affordance — mobile-only hint. */
+.sr-group-tap {
+  margin-left: auto;
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  text-transform: none;
+  letter-spacing: var(--tracking-normal);
+}
+
+/* Wide-screen layout: force-open + hide the tap hint. Applied both
+   through CSS AND a JS `.open = true` pass on load, so the semantic
+   tree matches the visual. */
+@media (min-width: 481px) {
+  details.sr-group,
+  .sr-group {
+    /* No :not([open]) hiding — content is always visible. */
+  }
+  details.sr-group > summary .sr-group-tap,
+  .sr-group > summary .sr-group-tap {
+    display: none;
+  }
+}
+
+/* Mobile layout: closed by default; the summary is the only visible
+   surface until tapped. `<details>` handles the open/close toggle
+   natively — no JS required. */
+@media (max-width: 480px) {
+  details.sr-group > summary {
+    background: var(--color-surface-raised);
+    /* WCAG 2.5.5 target size: 44x44. The summary is the primary tap
+       target for expanding severity groups on mobile; the shared rule
+       above at §5 pads to ~27px tall, which fails the 44px minimum by
+       17px. Mirror the .scan-mode-tab floor at §9. */
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+  }
+  details.sr-group:not([open]) > summary .sr-group-tap::before {
+    content: "tap to expand";
+  }
+  details.sr-group[open] > summary .sr-group-tap::before {
+    content: "tap to collapse";
+  }
+}
+
+
+/* =====================================================================
+ * 6) MINI-GRAPH — .sr-mini-graph
+ * ---------------------------------------------------------------------
+ * Spec §E.2 — a tiny inline SVG that reacts to the result. Shows up
+ * to five affected package nodes connected to a "your-app" root, with
+ * BLOCK nodes pulsing red so the malicious dep visibly "lights up".
+ *
+ * The SVG's paint is driven by CSS classes (`.is-block`, `.is-warn`,
+ * `.is-clean`) rather than inline `fill=` attributes, so themes swap
+ * automatically and all colors stay token-driven.
+ *
+ * The pulse keyframe is guarded by prefers-reduced-motion so the
+ * animation collapses to a static filled circle for users who ask.
+ * ===================================================================== */
+.sr-mini-graph,
+.scan-mini-graph {
+  display: block;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-surface-high);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.sr-mini-graph svg,
+.scan-mini-graph svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 96px;
+}
+
+/* Node colors — reference tokens directly via classes rather than
+   `fill="<hex>"`, so a11y-friendly and theme-swap-friendly. */
+.sr-mini-graph .node-root      { fill: var(--color-text); }
+.sr-mini-graph .node-clean,
+.sr-mini-graph .node-ok        { fill: var(--color-accent); }
+.sr-mini-graph .node-warn      { fill: var(--color-warn); }
+.sr-mini-graph .node-block     { fill: var(--color-danger); }
+.sr-mini-graph .edge           { stroke: var(--color-border-strong); stroke-width: 1.5; fill: none; }
+.sr-mini-graph .edge.is-block  { stroke: var(--color-danger); }
+.sr-mini-graph .edge.is-warn   { stroke: var(--color-warn); }
+.sr-mini-graph .node-label     {
+  fill: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;                /* SVG-local — clamp/vw doesn't apply cleanly inside <svg> */
+}
+
+/* Pulse animation — BLOCK nodes flash three times over ~2.7s (900ms
+   period × 3). Uses radius + opacity for the "lights up" effect
+   without transforming the node (transforms would break the SVG
+   coordinate system). */
+@keyframes scan-mini-pulse {
+  0%   { r: 8; opacity: 1; }
+  50%  { r: 12; opacity: 0.7; }
+  100% { r: 8; opacity: 1; }
+}
+
+@keyframes scan-mini-pulse-soft {
+  0%   { r: 7; opacity: 1; }
+  50%  { r: 9; opacity: 0.8; }
+  100% { r: 7; opacity: 1; }
+}
+
+.sr-mini-graph .node-block.is-pulsing {
+  animation: scan-mini-pulse 900ms var(--ease-standard) 3;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.sr-mini-graph .node-warn.is-pulsing {
+  animation: scan-mini-pulse-soft 900ms var(--ease-standard) 1;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Glow ring — a companion circle behind the pulsing node, painted
+   with the semi-transparent accent-glow token so it reads as a soft
+   halo. Purely decorative; sits behind the primary node in stacking. */
+.sr-mini-graph .glow-block {
+  fill: var(--color-danger-soft);
+  animation: scan-mini-pulse 900ms var(--ease-standard) 3;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.sr-mini-graph .glow-warn {
+  fill: var(--color-warn-soft);
+  animation: scan-mini-pulse-soft 900ms var(--ease-standard) 1;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Caption — reads the semantic content the SVG is aria-hidden for. */
+.sr-mini-graph-cap,
+.scan-mini-graph figcaption {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-snug);
+}
+
+/* Reduced motion — flatten pulses to a static state. tokens.css already
+   collapses --dur-* to ~0ms, but explicit keyframe suppression is
+   safer for SVG-embedded animations that don't always inherit the
+   --dur-* token via `animation-duration`. */
+@media (prefers-reduced-motion: reduce) {
+  .sr-mini-graph .node-block.is-pulsing,
+  .sr-mini-graph .node-warn.is-pulsing,
+  .sr-mini-graph .glow-block,
+  .sr-mini-graph .glow-warn {
+    animation: none;
+  }
+}
+
+
+/* =====================================================================
+ * 7) NOSCRIPT PROGRESSIVE ENHANCEMENT — .scan-noscript
+ * ---------------------------------------------------------------------
+ * Spec §I — a static readable-with-JS-off block that lives BEFORE the
+ * interactive scanner. Shows an example scan screenshot + CLI hint +
+ * GitHub link. All content is server-rendered HTML; no JS required.
+ * ===================================================================== */
+.scan-noscript {
+  display: block;
+  margin: 0 0 var(--space-5);
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.scan-noscript-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.scan-noscript h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--fs-h4);
+  line-height: var(--lh-tight);
+  font-family: var(--font-sans);
+}
+
+.scan-noscript p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+}
+
+.scan-noscript code {
+  padding: 2px var(--space-2);
+  background: var(--code-bg);
+  color: var(--color-accent);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+.scan-noscript a {
+  color: var(--color-accent);
+}
+.scan-noscript a:hover {
+  color: var(--color-accent-2);
+}
+
+.scan-noscript img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 800px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+
+/* =====================================================================
+ * 8) RUN-BUTTON COOLDOWN STATE
+ * ---------------------------------------------------------------------
+ * Spec §G.1 — after a scan completes, the Run button is disabled for
+ * 5 seconds and its label becomes "Ready in Ns…". No new selector: we
+ * hang off `.is-cooldown` on the existing run button so the visual
+ * change is state-driven rather than element-swap.
+ *
+ * The base `.btn[disabled]` from primitives.css already handles the
+ * dim/no-cursor styling; this rule adds a subtle horizontal wipe so
+ * users see the cooldown "ticking" rather than a dead-looking button.
+ * ===================================================================== */
+#scan-run.is-cooldown,
+.scan-run.is-cooldown {
+  position: relative;
+  overflow: hidden;
+}
+
+#scan-run.is-cooldown::after,
+.scan-run.is-cooldown::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--cooldown-progress, 0%);
+  background: var(--color-accent-soft);
+  transition: width var(--dur-slow) linear;
+  pointer-events: none;
+}
+
+
+/* =====================================================================
+ * 9) DENSITY TWEAKS — small-viewport polish
+ * ---------------------------------------------------------------------
+ * The scanner card holds a lot on mobile (tabs + inputs + progress +
+ * result). These are surgical rules to keep it comfortable at 375px
+ * without changing the desktop feel.
+ * ===================================================================== */
+@media (max-width: 480px) {
+  .scan-mode,
+  .scan-mode-tabs {
+    width: 100%;
+    justify-content: stretch;
+  }
+  .scan-mode-tab,
+  .scan-mode-tabs button[role="tab"] {
+    flex: 1 1 auto;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    /* WCAG 2.5.5 target size: 44x44. Once the .scan-mode-sub caption is
+       hidden below, the intrinsic tab height drops to ~34px — this floor
+       keeps the touch/click surface compliant. */
+    min-height: 44px;
+  }
+  /* Hide the secondary caption on narrow viewports so both tabs render as
+     single-line pills. Otherwise "Capability profile" wraps to two lines
+     while "Diff" stays one line, and the mismatched tab heights read as
+     visually broken. The demo-only messaging still lives in
+     #panel-profile .scan-demo-banner, so no meaning is lost. */
+  .scan-mode-sub {
+    display: none;
+  }
+  .scan-permalink-banner,
+  .scan-readonly-banner {
+    font-size: var(--fs-caption);
+  }
+  .scan-permalink-banner__actions,
+  .scan-permalink-banner .spb-actions,
+  .scan-readonly-banner__actions,
+  .scan-readonly-banner .srb-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .sr-cli,
+  .scan-cli-hint code {
+    width: 100%;
+  }
+  /* WCAG 2.5.5 target size: 44x44. The base .btn ships at ~39px tall
+     (padding: 10px 18px + font-size: .95rem) which fails the 44px floor
+     by 5px. .scan-wrap .btn.small in style.css:100 already handles the
+     small variants (Copy JSON / Retry / Copy link), but the primary
+     first-tap actions — #scan-run, #scan-example, #scan-example-benign —
+     use base .btn and would fail on 375px devices without this floor.
+     Scoped to .scan-wrap so we don't inflate every button sitewide. */
+  .scan-wrap .btn {
+    min-height: 44px;
+  }
+}
+
+
+/* =====================================================================
+ * 10) LEGACY SCANNER RULES (moved from style.css in the P3 LCP fix)
+ * ---------------------------------------------------------------------
+ * These rules used to live in style.css but were rendering-blocking the
+ * hero (LCP element = `.lede`). They only affect the below-the-fold
+ * scanner section, so moving them into this deferred stylesheet
+ * (media="print" + onload swap) shaves ~8.5 KB off style.css and lets
+ * the hero paint sooner on mobile slow-4G. See docs/BUDGETS.md for the
+ * measured impact.
+ *
+ * The original section boundaries and comments are preserved so a diff
+ * against style.css@main is easy to audit.
+ * ===================================================================== */
+
+/* ── vetlock scanner ────────────────────────────────────────────────── */
+.scan-lede { color: var(--muted); max-width: 62ch; margin: 0 0 24px; font-size: 1.02rem; }
+.scan-lede code { color: var(--text); }
+.scan-lede em { font-style: normal; color: var(--accent); }
+.scan-wrap {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
+  padding: 24px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+}
+.scan-wrap::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 100% 0%, var(--accent-dim), transparent 55%);
+  opacity: 0.6;
+}
+.scan-wrap > * { position: relative; }
+
+.scan-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+
+.dropzone {
+  display: flex; flex-direction: column; align-items: stretch; justify-content: center;
+  min-height: 110px; padding: 18px;
+  background: var(--panel-2); border: 2px dashed var(--line-strong); border-radius: var(--radius);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.15s;
+  text-align: left;
+}
+.dropzone:hover, .dropzone:focus-visible { border-color: var(--accent); background: var(--panel-3); outline: none; }
+.dropzone.dragging { border-color: var(--accent); background: var(--accent-dim); transform: scale(1.01); }
+.dropzone.filled { border-color: var(--accent); border-style: solid; background: var(--panel-3); }
+.dropzone.filled .dz-hint { display: none; }
+.dropzone.error { border-color: var(--danger); background: var(--danger-dim); }
+.dz-label { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; letter-spacing: 0.02em; }
+.dz-label .accent { color: var(--accent); }
+.dz-hint { font-size: 0.82rem; color: var(--dim); }
+.dz-meta { font-size: 0.78rem; color: var(--accent); display: flex; flex-direction: column; gap: 2px; }
+.dz-meta.warn { color: var(--warn); }
+
+.scan-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+
+/* ── scanner progress bar ───────────────────────────────────────────── */
+.scan-progress {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 18px; margin-bottom: 18px;
+}
+.sp-bar { height: 4px; background: var(--panel-3); border-radius: 999px; overflow: hidden; margin-bottom: 14px; }
+.sp-fill {
+  height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.5s ease;
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+.sp-stages { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.sp-stages li { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--dim); font-family: var(--mono); }
+.sp-num { width: 20px; height: 20px; border-radius: 50%; background: var(--panel-3); color: var(--dim); font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: 700; border: 1px solid var(--line); }
+.sp-stages li.active { color: var(--accent); }
+.sp-stages li.active .sp-num { background: var(--accent); color: var(--color-on-accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.sp-stages li.done { color: var(--muted); }
+.sp-stages li.done .sp-num { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-dim); }
+.sp-stages li.done .sp-num::before { content: "✓"; }
+.sp-stages li.done .sp-num-text { display: none; }
+.sp-note { font-size: 0.78rem; color: var(--muted); margin: 14px 0 0; }
+.sp-note .sp-msg { color: var(--accent); margin-left: 8px; }
+
+/* ── scanner result ─────────────────────────────────────────────────── */
+.scan-result { background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.sr-head { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 1px solid var(--line); background: var(--panel-3); }
+.sr-verdict {
+  font-family: var(--mono); font-weight: 700; font-size: 0.85rem; padding: 4px 12px; border-radius: 6px;
+  letter-spacing: 0.08em;
+}
+.sr-verdict.BLOCK { color: var(--danger); background: var(--danger-dim); }
+.sr-verdict.WARN { color: var(--warn); background: var(--warn-dim); }
+.sr-verdict.INFO { color: var(--info); background: var(--info-dim); }
+.sr-verdict.CLEAN { color: var(--accent); background: var(--accent-dim); }
+.sr-meta { color: var(--muted); font-size: 0.85rem; }
+.sr-head .btn { margin-left: auto; }
+.sr-body { padding: 18px; max-height: 500px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+.sr-body::-webkit-scrollbar { width: 8px; }
+.sr-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
+.sr-body::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+.sr-empty { text-align: center; padding: 30px 16px; color: var(--muted); }
+.sr-empty .sr-emoji { font-size: 2rem; display: block; margin-bottom: 8px; }
+
+.sr-group { margin-bottom: 22px; }
+.sr-group:last-child { margin-bottom: 0; }
+.sr-group-h { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 10px; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; }
+.sr-group-h.BLOCK { color: var(--danger); background: var(--danger-dim); }
+.sr-group-h.WARN { color: var(--warn); background: var(--warn-dim); }
+.sr-group-h.INFO { color: var(--info); background: var(--info-dim); }
+.sr-pkg { padding-left: 12px; border-left: 1px solid var(--line); margin-bottom: 12px; }
+.sr-pkg-h { font-weight: 600; margin: 0 0 4px; font-size: 0.95rem; }
+.sr-pkg-h .arrow { color: var(--muted); font-family: var(--mono); font-size: 0.85rem; margin: 0 6px; }
+.sr-pkg-h .from { color: var(--muted); font-family: var(--mono); font-size: 0.85rem; }
+.sr-pkg-h .to { color: var(--accent); font-family: var(--mono); font-size: 0.85rem; }
+.sr-prov { color: var(--muted); font-family: var(--mono); font-size: 0.78rem; margin: 0 0 8px; }
+.sr-prov .sep { color: var(--dim); margin: 0 4px; }
+
+.finding-row {
+  padding: 8px 0 8px 12px; margin: 0 0 6px;
+  border-left: 3px solid transparent;
+  font-size: 0.9rem;
+}
+.finding-row.BLOCK { border-left-color: var(--danger); }
+.finding-row.WARN { border-left-color: var(--warn); }
+.finding-row.INFO { border-left-color: var(--info); }
+.fr-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.fr-detector { font-family: var(--mono); font-weight: 600; color: var(--text); }
+.fr-cat { font-family: var(--mono); font-size: 0.7rem; padding: 1px 8px; border-radius: 999px; letter-spacing: 0.05em; }
+.fr-cat.NET, .fr-cat.INSTALL, .fr-cat.EXEC, .fr-cat.FS, .fr-cat.ENV, .fr-cat.INTEG { color: var(--danger); background: var(--danger-dim); }
+.fr-cat.OBF, .fr-cat.CODE, .fr-cat.META, .fr-cat.DEPS { color: var(--warn); background: var(--warn-dim); }
+.fr-msg { color: var(--muted); font-size: 0.88rem; margin: 4px 0 0; }
+.fr-evidence { font-family: var(--mono); font-size: 0.78rem; color: var(--dim); margin: 6px 0 0; padding: 6px 10px; background: var(--panel-3); border-radius: 6px; overflow-x: auto; }
+.fr-evidence .ev-loc { color: var(--muted); margin-right: 10px; }
+.fr-evidence .ev-snip { color: var(--text); }
+
+.sr-foot { padding: 12px 18px; border-top: 1px solid var(--line); font-size: 0.78rem; color: var(--muted); background: var(--panel-3); }
+.sr-foot code { color: var(--accent); }
+
+/* ── scan result: mobile-collapse (P1) ───────────────────────────────
+   Wrap all severity groups in a native <details>. Wide viewports render
+   <details open> and hide the summary chip; <=480px removes `open` so the
+   panel collapses to the chip and expands on tap. Native <details> gives
+   keyboard toggle + focusable summary + aria-expanded for free. */
+.sr-details { display: block; }
+.sr-details > summary { display: none; }
+.sr-details > summary::-webkit-details-marker { display: none; }
+.sr-details > summary::marker { content: ""; }
+
+/* ── scanner error ──────────────────────────────────────────────────── */
+.scan-error {
+  padding: 16px 18px; border-radius: var(--radius); background: var(--danger-dim); border: 1px solid var(--danger);
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.se-title { color: var(--danger); font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase; }
+.se-msg { color: var(--text); flex: 1 1 200px; font-size: 0.92rem; }
+.scan-error .btn { flex: 0 0 auto; }
+
+/* ── scanner responsive (was style.css @media blocks) ───────────────── */
+@media (max-width: 480px) {
+  /* Prevent nested scroll-within-scroll trap on phones: let the page be the
+     scroller. */
+  .sr-body { max-height: none; overflow: visible; padding: 14px; }
+  /* Header row: allow the pill, meta line, and Copy button to wrap so a
+     wide meta string doesn't push the button off-screen. */
+  .sr-head { flex-wrap: wrap; gap: 10px; }
+  .sr-head .btn { margin-left: 0; }
+  /* Reveal the collapsed summary chip that CSS hides on wide screens. When
+     <details> is closed the chip is the ONLY visible child of .sr-body, so
+     the panel reads as "verdict + count · tap to expand". */
+  .sr-details > summary {
+    display: block;
+    cursor: pointer;
+    padding: 10px 14px;
+    background: var(--panel-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    user-select: none;
+  }
+  .sr-details > summary:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+  }
+  .sr-details > summary:focus-visible {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  /* When expanded on mobile, gap between summary chip and first severity group. */
+  .sr-details[open] > summary { margin-bottom: 14px; }
+}
+@media (max-width: 900px) {
+  .scan-inputs { grid-template-columns: 1fr; }
+  .sp-stages { grid-template-columns: 1fr; gap: 10px; }
+  .sp-stages li { justify-content: flex-start; }
+}

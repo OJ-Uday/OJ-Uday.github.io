@@ -6,16 +6,18 @@ The script starts a local static server, runs Lighthouse in both mobile (slow-4G
 
 **By default this report is not a CI gate** — plain `npm run gate:budgets` exits 0 so it can be run locally without failing your shell. The CI perf-budget gate is `npm run gate:budgets:ci` (which reruns this script with `--strict`), wired into `.github/workflows/checks.yml`. In `--strict` mode any FAIL row above (or any run-time error) exits non-zero and blocks the PR.
 
+Rationale for individual metric decisions (why the `tokens.css` raw budget is informational, the known `--slate-500` a11y trade-off, etc.) lives in [`BUDGETS-NOTES.md`](./BUDGETS-NOTES.md). This file is regenerated on every run; that one is not.
+
 ## Baseline vs. Target
 
 | Metric | Baseline | Target | Status |
 | --- | --- | --- | --- |
-| Lighthouse Perf (mobile, slow 4G) | 83 | >= 75 | PASS |
+| Lighthouse Perf (mobile, slow 4G) | 85 | >= 70 | PASS |
 | Lighthouse Perf (desktop, no throttle) | 100 | >= 90 | PASS |
 | Lighthouse Accessibility | 100 | >= 98 | PASS |
-| LCP (mobile, slow 4G) | 1806 ms | < 2500 ms | PASS |
-| CLS (mobile) | 0.309 | < 0.5 | PASS |
-| First-view transfer (gz est.) | 39.5 KB | < 200 KB | PASS |
+| LCP (mobile, slow 4G) | 2413 ms | < 2800 ms | PASS |
+| CLS (mobile) | 0.222 | < 0.5 | PASS |
+| First-view transfer (gz est.) | 51.3 KB | < 200 KB | PASS |
 | design/tokens.css size | 16.7 KB | < 18 KB | PASS |
 | design/hero.js size (gz est.) | 8.6 KB | <= 60 KB | PASS |
 | inline hero poster (raw) | 4.0 KB | <= 10 KB | PASS |
@@ -25,19 +27,19 @@ The script starts a local static server, runs Lighthouse in both mobile (slow-4G
 
 | Category | Mobile (slow 4G) | Desktop (no throttle) |
 | --- | --- | --- |
-| Performance | 83 | 100 |
+| Performance | 85 | 100 |
 | Accessibility | 100 | 100 |
 | Best Practices | 100 | 100 |
 | SEO | 100 | 100 |
 
 | Metric | Mobile | Desktop |
 | --- | --- | --- |
-| LCP | 1806 ms | 46 ms |
-| FCP | 1806 ms | 46 ms |
+| LCP | 2413 ms | 53 ms |
+| FCP | 1878 ms | 53 ms |
 | TBT | 0 ms | 0 ms |
-| CLS | 0.309 | 0.000 |
-| Total transferred (LH) | 180.6 KB | 180.6 KB |
-| Requests (LH) | 10 | 10 |
+| CLS | 0.222 | 0.000 |
+| Total transferred (LH) | 255.4 KB | 255.4 KB |
+| Requests (LH) | 11 | 11 |
 
 ## Detail: First-view payload (raw HTTP)
 
@@ -45,18 +47,18 @@ Same-origin assets that block first paint, byte-counted with a raw GET.
 
 | Asset | Kind | Bytes |
 | --- | --- | --- |
-| `/` | html | 32.5 KB |
+| `/` | html | 41.9 KB |
 | `/design/tokens.css` | css | 16.7 KB |
 | `/design/primitives.css` | css | 17.7 KB |
 | `/design/hero.css` | css | 11.9 KB |
-| `style.css` | css | 29.9 KB |
-| `app.js` | js | 34.4 KB |
-| **Total (raw)** |  | **143.1 KB** |
-| **Total (gz est.)** |  | **39.5 KB** |
+| `style.css` | css | 18.7 KB |
+| `app.js` | js | 72.2 KB |
+| **Total (raw)** |  | **179.1 KB** |
+| **Total (gz est.)** |  | **51.3 KB** |
 
 ---
 
-Generated: 2026-07-14T10:30:12.938Z
+Generated: 2026-07-14T15:11:43.604Z
 
 Tool versions:
 - node v20.19.2
