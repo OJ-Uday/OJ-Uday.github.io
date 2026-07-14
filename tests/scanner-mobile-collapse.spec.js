@@ -92,7 +92,7 @@ test.describe('scanner mobile collapse', () => {
     });
     const page = await ctx.newPage();
     await mockScanBackend(page);
-    await page.goto('/');
+    await page.goto('/vetlock/');
 
     // P3 introduced a mode-tabs UI with "Capability profile" as default;
     // this test drives the diff flow (before/after example fixtures), so
@@ -165,7 +165,7 @@ test.describe('scanner mobile collapse', () => {
     });
     const page = await ctx.newPage();
     await mockScanBackend(page);
-    await page.goto('/');
+    await page.goto('/vetlock/');
 
     // P3 mode-tabs UI: default is "Capability profile"; this test uses the
     // diff-mode example seed path, so switch tabs first. Wait for visibility

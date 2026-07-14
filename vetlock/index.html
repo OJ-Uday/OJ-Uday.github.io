@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en" id="top">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vetlock — case study — Uday Ojha</title>
+  <!--
+    FOUC preflight — MUST stay inline in <head>, ahead of any stylesheet link.
+    Two jobs, both critical-path:
+      1) Stamp `js` on <html> so progressive-enhancement CSS gates (e.g.
+         `.js .reveal:not(.is-visible)` in primitives.css) apply BEFORE first
+         paint whenever JS is running — without JS the class is never added
+         and those rules never match, keeping content visible by default.
+      2) Read the persisted theme from localStorage and stamp data-theme on
+         <html> BEFORE the first paint. Any external script (even
+         /design/theme.js as a module) is deferred and would run after
+         tokens.css applies, causing a dark→light flash for light-mode users.
+    Kept minified to <250 bytes so it stays cheap on the critical path.
+  -->
+  <script>!function(){document.documentElement.classList.add("js");try{var t=localStorage.getItem("uday.theme");(t=="dark"||t=="light")&&(document.documentElement.dataset.theme=t)}catch(e){}}();</script>
+  <meta name="description" content="vetlock: behavioral diff for npm dependency updates. Try the bundled demo, see how the pipeline works, view live metrics.">
+  <meta property="og:title" content="vetlock — case study — Uday Ojha">
+  <meta property="og:description" content="vetlock: behavioral diff for npm dependency updates. Try the bundled demo, see how the pipeline works, view live metrics.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oj-uday.github.io/vetlock/">
+  <meta property="og:image" content="https://oj-uday.github.io/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="uday.ojha — I build systems that watch systems.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://oj-uday.github.io/og-image.png">
+  <meta name="color-scheme" content="dark light">
+  <!-- Favicon: shared asset (single source, reused by /styleguide/). Was previously an inline data URL that
+       duplicated the same hardcoded brand hexes on both pages; centralizing here makes a retheme a one-file edit. -->
+  <link rel="icon" href="/design/favicon.svg" type="image/svg+xml">
+  <!-- Preload the render-blocking CSS so the browser starts fetching
+       immediately while the (large, content-heavy) HTML continues to
+       stream. Without these hints Chrome will wait to discover the
+       <link rel="stylesheet"> in tree order — with the page now ~100 KB
+       of inline SVG content, discovery drifts noticeably deeper into
+       the document, delaying FCP. Same URLs as the stylesheet links
+       below; the preload just moves the network fetch earlier. -->
+  <link rel="preload" href="/design/tokens.css"     as="style">
+  <link rel="preload" href="/design/primitives.css" as="style">
+  <link rel="preload" href="/style.css"              as="style">
+  <link rel="stylesheet" href="/design/tokens.css">
+  <link rel="stylesheet" href="/design/primitives.css">
+  <link rel="stylesheet" href="/design/hero.css">
+  <!-- Critical hero rules inlined so the LCP element (.lede) reaches its
+       FINAL rendered size at first paint, not after style.css finishes.
+       Without this, the .lede reflows from its browser-default box to
+       its final 380x200 box after style.css applies, which Lighthouse
+       credits as a fresh LCP frame and pushes LCP ~450 ms past FCP on
+       slow 4G. Duplicates a small handful of rules from style.css and
+       is kept tightly scoped (hero + LCP-adjacent nodes only) — the
+       full stylesheet is still loaded and remains authoritative.
+       #scan gets content-visibility:auto so its 200-line, 11 KB subtree
+       does not participate in layout during first paint (the browser
+       still parses it into the DOM, so JS still works; layout is
+       skipped until scroll gets close). Sub-1 KB total; no first-view
+       budget impact. -->
+  <style>
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);margin:0;line-height:1.65;font-size:16px}
+    main{max-width:1120px;margin:0 auto;padding:0 24px}
+    section{padding:64px 0 12px}
+    .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;min-height:78vh;padding-top:48px}
+    .kicker{color:var(--accent);font-family:var(--mono);font-size:.85rem;letter-spacing:.06em;text-transform:lowercase;margin:0}
+    h1{font-size:clamp(2.4rem,6.5vw,3.8rem);line-height:1.06;margin:10px 0 20px;letter-spacing:-.025em;font-weight:700}
+    .lede{color:var(--muted);font-size:1.08rem;max-width:34em}
+    @media (max-width:900px){.hero{grid-template-columns:1fr;min-height:0;gap:28px}}
+    #scan{content-visibility:auto;contain-intrinsic-size:900px 1400px}
+  </style>
+  <!-- P3 scanner-specific styling. Deferred off the critical path via
+       rel="preload" + onload swap — the #scan section sits below the
+       fold and is JS-driven, and blocking on scan.css delays FCP. The
+       earlier `media="print"` variant fetched scan.css at LOW priority
+       (browsers deprioritize print sheets), which regressed LCP even
+       more. Load ORDER in <head> still places scan.css BEFORE style.css
+       so scan.css's legacy scanner rules (moved from style.css in the
+       P3 refactor) sit lower in the cascade than any style.css
+       override — matching the pre-move behavior. The <noscript> fallback
+       guarantees the styles still apply when scripting is disabled. -->
+  <link rel="preload" as="style" href="/design/scan.css" onload="this.onload=null;this.rel='stylesheet'">
+  <noscript><link rel="stylesheet" href="/design/scan.css"></noscript>
+  <link rel="stylesheet" href="/style.css">
+  <!--
+    Below-fold section stylesheets are non-render-blocking. Each section
+    is off-screen at first paint (how-it-works / systems / red-team /
+    projects), so blocking on their CSS would only inflate LCP with no
+    visual payoff. The `media="print"` trick tells the browser this is
+    a print-only sheet (so it doesn't block first paint), then the
+    onload handler flips it back to `all` and the styles apply. The
+    <noscript> fallback keeps everything render-blocking (and therefore
+    correctly styled) when JS is off — matches our progressive-enhancement
+    rule that content must be readable without JS.
+  -->
+  <link rel="stylesheet" href="/design/how-it-works.css" media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/design/systems.css"      media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/design/projects.css"     media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="/design/how-it-works.css">
+    <link rel="stylesheet" href="/design/systems.css">
+    <link rel="stylesheet" href="/design/projects.css">
+  </noscript>
+  <!-- Theme toggle needs JS to function; hide it when scripting is off so it doesn't look interactive-but-inert.
+       The .reveal override here is a belt-and-suspenders fallback: primitives.css already keeps .reveal visible
+       by default and only hides it when `html.js` is present (stamped by the preflight above), so no-JS clients
+       never see the pre-animation state. The <noscript> rule guarantees the same for the legacy .reveal in
+       style.css, and covers the edge case where a page loads style.css without the preflight. -->
+  <!-- With JS off: hide the theme toggle (interactive-but-inert), keep .reveal content visible (no animation),
+       hide the scanner mode-tab + panel machinery (P3 — JS-driven, would render as broken skeleton), and hide
+       the #proof section entirely (P4 — every tile stays [hidden] without JS, so header+lede would promise
+       numbers we can't deliver). -->
+  <noscript><style>.nav-theme-toggle{display:none}.reveal{opacity:1;transform:none}#scan-mode,#panel-diff,#panel-profile,.scan-actions,#scan-readonly-banner,#scan-progress,#scan-result,#scan-error{display:none!important}#proof{display:none}</style></noscript>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Uday Ojha",
+    "jobTitle": "Software Engineer",
+    "url": "https://oj-uday.github.io/",
+    "sameAs": ["https://github.com/OJ-Uday", "https://www.linkedin.com/in/uday-o/"]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <a class="brand" href="/" data-evt="nav.brand"><span class="dot" aria-hidden="true"></span>uday.ojha</a>
+    <nav aria-label="Sections">
+      <a href="/vetlock/" data-evt="nav.vetlock" aria-current="page">vetlock</a>
+      <a href="/#systems" data-evt="nav.systems">Systems</a>
+      <a href="/#projects" data-evt="nav.projects">Projects</a>
+      <a href="/#experience" data-evt="nav.experience">Experience</a>
+      <a href="/#writing" data-evt="nav.writing">Writing</a>
+      <a href="/#contact" data-evt="nav.contact">Contact</a>
+      <a href="/styleguide/" data-evt="nav.styleguide" class="nav-styleguide">styleguide</a>
+    </nav>
+    <a class="btn small" href="/resume.pdf" data-evt="resume.download">Résumé</a>
+    <button type="button"
+            class="btn btn--ghost btn--sm nav-theme-toggle"
+            data-theme-toggle
+            aria-label="Toggle theme"
+            aria-pressed="false"
+            title="Toggle theme (Shift+T)">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    </button>
+  </header>
+  <main id="main">
+    <p class="back-link"><a href="/">↩ Back to portfolio</a></p>
+
+    <section id="vetlock-intro" class="section container">
+      <h1>vetlock</h1>
+      <p class="lede">
+        Behavioral diff for npm dependency updates. 17 detectors, HMAC-authed cache,
+        Damerau-Levenshtein typosquat matching, GHSA adjacency. Below: try the bundled
+        demo, walk the pipeline, and see live metrics.
+      </p>
+    </section>
+
+    <section id="scan" class="scan" data-scan-mode="profile">
+      <h2><span class="mono h-idx">00</span> Try vetlock — bundled fixture demo
+        <span class="tag mono" aria-label="demo mode"><span class="tag-dot" aria-hidden="true"></span>demo</span>
+      </h2>
+      <p class="scan-lede">
+        Try vetlock on one of two bundled fixtures — the real
+        <em>Shai-Hulud</em> hijack, or a benign <code>debug@4.3.4 → 4.3.5</code> bump —
+        with <em>Try malicious</em> / <em>Try benign</em> below. Scanning your own
+        lockfile stays off by default: live-npm scanning of arbitrary lockfiles is
+        gated behind a future vetlock release + this site's startup packet.
+        <a href="#how-it-works" data-evt="vetlock.how">How it works ↓</a>
+      </p>
+
+      <!-- Progressive-enhancement fallback: with JS disabled, the interactive
+           scanner (tabs, dropzones, Run button) is hidden by the <noscript>
+           style rule in <head>. This block replaces it with a static, readable
+           description + a link to the vetlock README so JS-off visitors get
+           real information instead of a dead-looking UI. The `.scan-noscript`
+           styling already lives in design/scan.css §7. -->
+      <noscript>
+        <div class="scan-noscript" role="note">
+          <div class="scan-noscript-inner">
+            <h3>Try vetlock — requires JavaScript</h3>
+            <p>
+              The in-browser scanner needs JavaScript to read your lockfile locally
+              and dispatch a GitHub Actions workflow. With scripting disabled it
+              stays hidden so nothing pretends to be interactive.
+            </p>
+            <p>
+              You can still run the exact same scan from your terminal:
+              <code>npx vetlock diff package-lock.before.json package-lock.after.json</code>.
+              Single-lockfile capability profile is a scheduled follow-on.
+            </p>
+            <p>
+              Learn more:
+              <a href="https://github.com/OJ-Uday/vetlock" rel="noopener">github.com/OJ-Uday/vetlock ↗</a>
+              (README, replay corpus, and the 12/13 real-attack benchmark).
+            </p>
+          </div>
+        </div>
+      </noscript>
+
+      <div class="scan-wrap">
+        <!-- P3 a11y: off-screen polite live region for clipboard/share announcements.
+             wireCopyBtn, copyShareLink, and copyCli all mutate a button's textContent
+             to "Copied" on success, but a name change on the activated button is not
+             spoken by NVDA/JAWS/VO. Writing the success/error region gives screen-reader
+             users aural feedback that the clipboard write worked (or that it was blocked). -->
+        <span id="scan-copy-live" class="sr-only" role="status" aria-live="polite"></span>
+
+        <!-- P3: permalink read-only banner. Empty by default; app.js's
+             enterReadOnlyMode() unhides this + swaps in the shared-scan
+             timestamp when ?scan=<id> is present in the URL. Populated
+             at boot from a static shell so screen readers see the region
+             immediately when a share link is opened. -->
+        <div id="scan-readonly-banner" class="scan-readonly-banner mono" role="status" hidden>
+          <span class="srb-msg">Viewing a shared scan result.</span>
+          <button type="button" class="btn small" id="srb-new" data-evt="scan.new">Try your own scan</button>
+          <button type="button" class="btn small ghost" id="srb-copy" data-evt="scan.share">Copy link</button>
+        </div>
+
+        <!-- P3 no-JS fallback for shared-scan permalinks. With JS off we cannot
+             read location.search to unhide #scan-readonly-banner, so a visitor
+             hitting /?scan=<id> would otherwise see nothing scan-specific. This
+             <noscript> block acknowledges the permalink case and surfaces the
+             Worker's raw JSON URL pattern so the shared result stays retrievable
+             even without scripting. -->
+        <noscript>
+          <div class="scan-readonly-banner mono" role="status">
+            <span class="srb-msg">
+              Shared scan permalinks (<code>?scan=&lt;id&gt;</code>) require JavaScript to render.
+              You can fetch the raw JSON directly at
+              <a href="https://vetlock-scan.oj-uday.workers.dev/scan/">https://vetlock-scan.oj-uday.workers.dev/scan/&lt;id&gt;</a>.
+            </span>
+          </div>
+        </noscript>
+
+        <!-- P3: mode tabs. Default is diff (matches the existing UX +
+             vetlock v0.3.0 which is diff-only). The profile tab is
+             visible but its Run button stays disabled until single-artifact
+             scanning ships in a follow-on release; the copy in the profile
+             dropzone explains this. -->
+        <div id="scan-mode" class="scan-mode" role="tablist" aria-label="Scan mode">
+          <button role="tab" id="tab-profile" data-scan-mode="profile"
+                  aria-selected="true" aria-controls="panel-profile" tabindex="0"
+                  class="scan-mode-tab is-active">Capability profile
+            <span class="scan-mode-sub">single artifact</span>
+          </button>
+          <button role="tab" id="tab-diff" data-scan-mode="diff"
+                  aria-selected="false" aria-controls="panel-diff" tabindex="-1"
+                  class="scan-mode-tab">Diff
+            <span class="scan-mode-sub">before → after</span>
+          </button>
+        </div>
+
+        <!-- Profile mode: single-artifact dropzone. Visible by default (profile
+             is the active tab per packet §6.1); app.js.setMode("diff") toggles hidden. -->
+        <div id="panel-profile" role="tabpanel" aria-labelledby="tab-profile">
+          <p class="scan-demo-banner mono" role="note"
+             aria-label="Capability profile is demo-only for now">
+            <strong>Demo only.</strong> Capability profile runs against bundled fixtures for now.
+            Use <em>Try malicious</em> / <em>Try benign</em> below —
+            your own lockfiles won't leave this browser.
+          </p>
+          <div class="dropzone" id="dz-single" data-slot="single" tabindex="0"
+               role="button" aria-label="Drop a lockfile for capability profile">
+            <div class="dz-label mono">Drop a lockfile</div>
+            <div class="dz-hint">package-lock.json · yarn.lock · pnpm-lock.yaml ·
+                                 requirements.txt · poetry.lock · pyproject.toml</div>
+            <div class="dz-meta mono" hidden></div>
+            <input type="file"
+                   accept=".json,.lock,.yaml,.yml,.toml,.txt,application/json,text/plain"
+                   aria-label="Lockfile for capability profile" hidden>
+          </div>
+        </div>
+
+        <!-- Diff mode: existing before/after dropzones. Wraps the historic
+             .scan-inputs unchanged so all diff-mode plumbing keeps working.
+             Hidden by default — profile is the active tab per packet §6.1. -->
+        <div id="panel-diff" role="tabpanel" aria-labelledby="tab-diff" hidden>
+          <div class="scan-inputs">
+            <div class="dropzone" id="dz-before" data-slot="before" data-label="before" tabindex="0"
+                 role="button" aria-label="Drop package-lock.before.json or click to select">
+              <div class="dz-label mono">package-lock.<span class="accent">before</span>.json</div>
+              <div class="dz-hint">drop file · or click to select</div>
+              <div class="dz-meta mono" hidden></div>
+              <input type="file" accept=".json,application/json" hidden>
+            </div>
+            <div class="dropzone" id="dz-after" data-slot="after" data-label="after" tabindex="0"
+                 role="button" aria-label="Drop package-lock.after.json or click to select">
+              <div class="dz-label mono">package-lock.<span class="accent">after</span>.json</div>
+              <div class="dz-hint">drop file · or click to select</div>
+              <div class="dz-meta mono" hidden></div>
+              <input type="file" accept=".json,application/json" hidden>
+            </div>
+          </div>
+        </div>
+
+        <div class="scan-actions">
+          <button class="btn" id="scan-run" data-evt="scan.run" disabled>
+            Run vetlock scan
+          </button>
+          <button class="btn ghost" id="scan-example" data-evt="scan.example">Try malicious (Shai-Hulud fixture)</button>
+          <button class="btn ghost" id="scan-example-benign" data-evt="scan.example.benign">Try benign (debug@4.3.4 → 4.3.5)</button>
+          <button class="btn ghost" id="scan-clear" data-evt="scan.clear" hidden>Clear</button>
+          <button class="btn ghost danger" id="scan-cancel" data-evt="scan.cancel" hidden>Cancel scan</button>
+        </div>
+
+        <div class="scan-progress" id="scan-progress" hidden aria-live="polite">
+          <div class="sp-bar"><div class="sp-fill" id="sp-fill" style="width: 0%"></div></div>
+          <ol class="sp-stages">
+            <li data-stage="submitted"><span class="sp-num">1</span><span class="sp-txt">Submitted</span></li>
+            <li data-stage="dispatched"><span class="sp-num">2</span><span class="sp-txt">Workflow dispatched</span></li>
+            <li data-stage="running"><span class="sp-num">3</span><span class="sp-txt">vetlock running</span></li>
+            <li data-stage="collecting"><span class="sp-num">4</span><span class="sp-txt">Collecting result</span></li>
+            <li data-stage="ready"><span class="sp-num">5</span><span class="sp-txt">Ready</span></li>
+          </ol>
+          <p class="sp-note mono">
+            <span id="sp-elapsed">0s</span> elapsed · typical scan takes 25–45s
+            <span class="sp-msg" id="sp-msg"></span>
+          </p>
+        </div>
+
+        <div class="scan-result" id="scan-result" hidden>
+          <div class="sr-head">
+            <div class="sr-verdict" id="sr-verdict">CLEAN</div>
+            <div class="sr-meta mono" id="sr-meta">0 findings · 0 packages · 0ms</div>
+            <button class="btn small ghost" id="sr-copy" data-evt="scan.copy">Copy JSON</button>
+          </div>
+          <!-- P3 mobile disclosure: the per-severity <details class="sr-group">
+               groups app.js emits into #sr-body already collapse to just their
+               summary on <=480px (scan.css §5) and force-open on wider screens.
+               An outer wrapper would double-wrap the disclosure and force users
+               to tap twice on mobile, so #sr-body is written to directly. -->
+          <div class="sr-body" id="sr-body"></div>
+          <div class="sr-foot mono">
+            Runs <a href="https://github.com/OJ-Uday/vetlock/releases/tag/v0.3.0" data-evt="scan.version">vetlock v0.3.0</a>
+            on <a href="https://github.com/OJ-Uday/vetlock-web-scans" data-evt="scan.workflow">GitHub Actions</a>.
+            For a full offline scan, see <a href="https://github.com/OJ-Uday/vetlock#readme" data-evt="scan.readme">the vetlock repo README</a>.
+          </div>
+        </div>
+
+        <div class="scan-error" id="scan-error" hidden role="alert">
+          <div class="se-title mono">scan failed</div>
+          <div class="se-msg" id="se-msg"></div>
+          <button class="btn small" id="se-retry" data-evt="scan.retry">Retry</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" class="hiw" aria-labelledby="hiw-title">
+      <div class="hiw__intro">
+        <h2 id="hiw-title"><span class="mono h-idx">·</span> How vetlock works</h2>
+        <p class="hiw__lede">
+          Six stages, one guarantee: <em>no package code ever runs</em>. vetlock reads
+          <strong>two lockfiles</strong> — the one you shipped and the one you're about to
+          ship — and walks the dependency delta without running a single line of
+          package code. What you see below is <strong>the actual pipeline</strong>:
+          diff, changed-set, recursive fetch, detectors, provenance graph, verdict.
+        </p>
+      </div>
+
+      <div class="hiw__grid" data-active-stage="1">
+
+        <!-- ── Sticky viz column (JS + wide viewport only) ────────────────
+             The six absolute-positioned frames stacked in this viz box
+             are injected by design/how-it-works.js (kept out of the
+             initial HTML to protect first-view LCP; see LCP note there).
+             CSS still gates which frame is visible via
+             `.hiw__grid[data-active-stage="N"] .hiw__frame[data-stage="N"]`.
+             Same viewBox (320×240) across all frames so the box stays a
+             fixed size while content swaps. Copy inside each frame is
+             decorative — the load-bearing prose (with role="img" +
+             aria-label) lives in the inline .hiw__stage-svg elements in
+             the stage cards to the right, so JS-off / narrow-viewport
+             clients are unaffected. -->
+        <aside class="hiw__viz-col" aria-hidden="true">
+          <div class="hiw__viz">
+
+
+
+
+
+
+
+          </div><!-- /.hiw__viz -->
+
+          <!-- Progress pips — six dots, one per stage. Purely decorative;
+               CSS drives their lit/unlit state from data-active-stage. -->
+          <div class="hiw__pips" aria-hidden="true">
+            <span class="hiw__pip" data-pip="1"></span>
+            <span class="hiw__pip" data-pip="2"></span>
+            <span class="hiw__pip" data-pip="3"></span>
+            <span class="hiw__pip" data-pip="4"></span>
+            <span class="hiw__pip" data-pip="5"></span>
+            <span class="hiw__pip" data-pip="6"></span>
+          </div>
+        </aside>
+
+        <!-- ── Stages column (always rendered — load-bearing content) ────
+             Each <li> is a stage card with a number, title, 1-2 sentence
+             explanation, and its own inline SVG. When JS + wide viewport
+             is active, CSS hides the inline SVGs (they're redundant with
+             the sticky rail); without JS, or on narrow viewports, the
+             inline SVGs are the diagram surface. -->
+        <ol class="hiw__stages">
+
+          <li class="hiw__stage" id="hiw-stage-1" data-stage="1">
+            <span class="hiw__stage-num mono">stage 01 · diff</span>
+            <h3>Lockfile diff</h3>
+            <p>
+              Two <code>package-lock.json</code> files in, one structural delta out.
+              vetlock parses each lockfile deterministically and emits <strong>added</strong>,
+              <strong>removed</strong>, and <strong>version-changed</strong> entries — no
+              network, no code, just the tree of what actually shipped.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Diff of two package-lock.json files. Left panel labeled 'before' lists axios 1.6.2 unchanged; right panel labeled 'after' shows axios bumped to 1.7.9 and a new @scoped/util 1.0.0 entry added."><rect x="14" y="18" width="140" height="200" rx="6" class="g-node"/><rect x="166" y="18" width="140" height="200" rx="6" class="g-node"/><text x="24" y="34">before</text><text x="176" y="34">after</text><text x="28" y="52" class="n-label-sm">"lodash": "4.17.21"</text><text x="180" y="52" class="n-label-sm">"lodash": "4.17.21"</text><rect x="22" y="58" width="124" height="14" class="g-diff-del-bg"/><text x="26" y="69" class="g-diff-del">-</text><text x="34" y="69" class="n-label-sm">"axios": "1.6.2"</text><rect x="174" y="58" width="124" height="14" class="g-diff-add-bg"/><text x="178" y="69" class="g-diff-add">+</text><text x="186" y="69" class="n-label-sm">"axios": "1.7.9"</text><text x="28" y="88" class="n-label-sm">"chalk": "5.3.0"</text><text x="180" y="88" class="n-label-sm">"chalk": "5.3.0"</text><rect x="174" y="94" width="124" height="14" class="g-diff-add-bg"/><text x="178" y="105" class="g-diff-add">+</text><text x="186" y="105" class="n-label-sm">"@scoped/util": "1.0.0"</text><text x="28" y="124" class="n-label-sm">"zod": "3.22.4"</text><text x="180" y="124" class="n-label-sm">"zod": "3.23.8"</text><text x="160" y="200" class="n-callout" text-anchor="middle">two lockfiles → structural delta</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-2" data-stage="2">
+            <span class="hiw__stage-num mono">stage 02 · changed set</span>
+            <h3>Changed set</h3>
+            <p>
+              The delta collapses into a small set of <em>package@version</em> pairs to
+              investigate. Everything else in the tree is <strong>evidence of what didn't
+              move</strong> and gets skipped — a scan is only ever as expensive as the
+              change is wide.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Dependency tree with app at the top and three direct dependencies below. Two of the three — axios and @scoped/util — are highlighted as the changed set; chalk is not."><rect x="130" y="26" width="60" height="24" rx="4" class="g-node"/><text x="160" y="42" text-anchor="middle">app</text><rect x="34" y="96" width="60" height="24" rx="4" class="g-node"/><text x="64" y="112" text-anchor="middle">chalk</text><rect x="130" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="112" text-anchor="middle" class="n-callout">axios</text><rect x="226" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="256" y="112" text-anchor="middle" class="n-callout">@scoped/util</text><rect x="34" y="170" width="60" height="24" rx="4" class="g-node"/><text x="64" y="186" text-anchor="middle" class="n-label-sm">ansi</text><rect x="130" y="170" width="60" height="24" rx="4" class="g-node"/><text x="160" y="186" text-anchor="middle" class="n-label-sm">follow-redirects</text><rect x="226" y="170" width="60" height="24" rx="4" class="g-node"/><text x="256" y="186" text-anchor="middle" class="n-label-sm">?</text><path d="M160 50 L64 96" class="g-edge"/><path d="M160 50 L160 96" class="g-edge--emph"/><path d="M160 50 L256 96" class="g-edge--emph"/><path d="M64 120 L64 170" class="g-edge"/><path d="M160 120 L160 170" class="g-edge"/><path d="M256 120 L256 170" class="g-edge"/><text x="160" y="222" class="n-callout" text-anchor="middle">2 changed roots · closure not yet resolved</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-3" data-stage="3">
+            <span class="hiw__stage-num mono">stage 03 · recursive fetch</span>
+            <h3>Recursive fetch</h3>
+            <p>
+              For each changed root, vetlock walks its <strong>full transitive closure</strong>
+              via the npm registry — HMAC-authed cache in front, so a real repo scan hits the
+              network once and reuses the tarballs across every subsequent detector.
+              Nothing is executed; tarballs are only parsed.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Same dependency tree with animated flow arrows from the changed roots axios and @scoped/util down through their transitive dependencies, showing the recursive fetch walking the closure."><rect x="130" y="26" width="60" height="24" rx="4" class="g-node"/><text x="160" y="42" text-anchor="middle">app</text><rect x="34" y="96" width="60" height="24" rx="4" class="g-node"/><text x="64" y="112" text-anchor="middle">chalk</text><rect x="130" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="112" text-anchor="middle" class="n-callout">axios</text><rect x="226" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="256" y="112" text-anchor="middle" class="n-callout">@scoped/util</text><rect x="34" y="170" width="60" height="24" rx="4" class="g-node"/><text x="64" y="186" text-anchor="middle" class="n-label-sm">ansi</text><rect x="130" y="170" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="186" text-anchor="middle" class="n-label-sm n-callout">follow-redirects</text><rect x="226" y="170" width="60" height="24" rx="4" class="g-node--emph"/><text x="256" y="186" text-anchor="middle" class="n-label-sm n-callout">encode</text><path d="M160 50 L64 96" class="g-edge"/><path d="M160 50 L160 96" class="g-edge--flow"/><path d="M160 50 L256 96" class="g-edge--flow"/><path d="M64 120 L64 170" class="g-edge"/><path d="M160 120 L160 170" class="g-edge--flow"/><path d="M256 120 L256 170" class="g-edge--flow"/><text x="160" y="222" class="n-callout" text-anchor="middle">registry tarballs · HMAC-authed cache</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-4" data-stage="4">
+            <span class="hiw__stage-num mono">stage 04 · detectors</span>
+            <h3>Detectors run</h3>
+            <p>
+              <strong>Seventeen static detectors</strong> pass over each tarball: install-script
+              shape, new endpoints, env-token harvest patterns, obfuscation deltas, integrity
+              tampering, typosquat neighbors, and more. Every detector emits <em>evidence</em> —
+              file, line, capability. Never a claim without a citation.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="A single changed package (axios) fans out to six detector chips — install-script, new endpoint, env-token harvest, obfuscation delta, typosquat, integrity mismatch. Env-token harvest is marked as a BLOCK-severity finding."><rect x="130" y="20" width="60" height="24" rx="4" class="g-node"/><text x="160" y="36" text-anchor="middle">app</text><rect x="130" y="80" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="96" text-anchor="middle" class="n-callout">axios</text><path d="M160 44 L160 80" class="g-edge"/><rect x="20" y="118" width="80" height="18" rx="9" class="g-pill--warn"/><text x="60" y="130" text-anchor="middle" class="t-on-warn n-label-sm">install-script</text><rect x="110" y="118" width="80" height="18" rx="9" class="g-pill--warn"/><text x="150" y="130" text-anchor="middle" class="t-on-warn n-label-sm">new endpoint</text><rect x="200" y="118" width="100" height="18" rx="9" class="g-pill--block"/><text x="250" y="130" text-anchor="middle" class="t-on-block n-label-sm">env-token harvest</text><rect x="20" y="146" width="80" height="18" rx="9" class="g-pill"/><text x="60" y="158" text-anchor="middle" class="n-label-sm">obfuscation Δ</text><rect x="110" y="146" width="80" height="18" rx="9" class="g-pill"/><text x="150" y="158" text-anchor="middle" class="n-label-sm">typosquat</text><rect x="200" y="146" width="100" height="18" rx="9" class="g-pill"/><text x="250" y="158" text-anchor="middle" class="n-label-sm">integrity mismatch</text><path d="M160 104 L60 118" class="g-edge"/><path d="M160 104 L150 118" class="g-edge"/><path d="M160 104 L250 118" class="g-edge--warn"/><text x="160" y="200" class="n-callout" text-anchor="middle">17 detectors · static-only · no code executed</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-5" data-stage="5">
+            <span class="hiw__stage-num mono">stage 05 · provenance</span>
+            <h3>Provenance graph</h3>
+            <p>
+              Findings alone aren't enough — every node in the changed closure carries
+              its <strong>origin, integrity, and adjacency</strong>: which registry
+              published it, which signatures match, and how close it lies to a known
+              advisory or typosquat cluster. Provenance is what turns a detector hit
+              into a decision.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Dependency tree annotated with provenance labels — chalk npm-signed, axios npm-signed, @scoped/util marked as 3 days old on npm with a warning color."><rect x="130" y="20" width="60" height="24" rx="4" class="g-node"/><text x="160" y="36" text-anchor="middle">app</text><rect x="34" y="86" width="60" height="24" rx="4" class="g-node"/><text x="64" y="102" text-anchor="middle">chalk</text><rect x="130" y="86" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="102" text-anchor="middle" class="n-callout">axios</text><rect x="226" y="86" width="60" height="24" rx="4" class="g-node--warn"/><text x="256" y="102" text-anchor="middle" class="n-warn">@scoped/util</text><rect x="34" y="156" width="60" height="24" rx="4" class="g-node"/><text x="64" y="172" text-anchor="middle" class="n-label-sm">ansi</text><rect x="130" y="156" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="172" text-anchor="middle" class="n-label-sm n-callout">follow-redirects</text><rect x="226" y="156" width="60" height="24" rx="4" class="g-node--warn"/><text x="256" y="172" text-anchor="middle" class="n-label-sm n-warn">encode</text><path d="M160 44 L64 86" class="g-edge"/><path d="M160 44 L160 86" class="g-edge--emph"/><path d="M160 44 L256 86" class="g-edge--warn"/><path d="M64 110 L64 156" class="g-edge"/><path d="M160 110 L160 156" class="g-edge--emph"/><path d="M256 110 L256 156" class="g-edge--warn"/><text x="64" y="200" text-anchor="middle" class="n-label-sm">npm · signed</text><text x="160" y="200" text-anchor="middle" class="n-label-sm n-callout">npm · signed</text><text x="256" y="200" text-anchor="middle" class="n-label-sm n-warn">npm · 3d old</text><text x="160" y="222" class="n-callout" text-anchor="middle">origin, integrity, adjacency · GHSA + typosquat</text></svg>
+          </li>
+
+          <li class="hiw__stage" id="hiw-stage-6" data-stage="6">
+            <span class="hiw__stage-num mono">stage 06 · verdict</span>
+            <h3>Verdict</h3>
+            <p>
+              A per-package severity (<em>CLEAN</em>, <em>WARN</em>, <em>BLOCK</em>) and
+              a whole-scan exit code — enough for CI to fail the merge automatically,
+              with the evidence attached. The scan finishes with the same
+              guarantee it started with: <strong>zero package code was run</strong>.
+            </p>
+            <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Verdict summary — a large BLOCK pill in the center flagging @scoped/util 1.0.0 for install-script and env-token harvest, with per-package severity pills below showing CLEAN chalk, WARN axios, BLOCK util."><rect x="80" y="46" width="160" height="48" rx="24" class="g-pill--block"/><text x="160" y="76" text-anchor="middle" class="g-verdict-label t-on-block">BLOCK</text><text x="160" y="112" text-anchor="middle" class="n-callout">@scoped/util 1.0.0</text><text x="160" y="128" text-anchor="middle" class="n-label-sm">install-script + env-token harvest</text><rect x="34" y="150" width="80" height="20" rx="10" class="g-pill--clean"/><text x="74" y="163" text-anchor="middle" class="t-on-clean n-label-sm">CLEAN · chalk</text><rect x="120" y="150" width="80" height="20" rx="10" class="g-pill--warn"/><text x="160" y="163" text-anchor="middle" class="t-on-warn n-label-sm">WARN · axios</text><rect x="206" y="150" width="80" height="20" rx="10" class="g-pill--block"/><text x="246" y="163" text-anchor="middle" class="t-on-block n-label-sm">BLOCK · util</text><path d="M160 198 L160 214" class="g-edge--warn"/><path d="M155 210 L160 218 L165 210 Z" class="g-arrow--warn"/><text x="160" y="230" class="n-label-sm" text-anchor="middle">exit code · CI fails the merge</text></svg>
+          </li>
+
+        </ol>
+      </div>
+    </section>
+
+    <section id="proof" class="proof" aria-label="Live proof">
+      <div class="proof-head">
+        <h2 class="proof-h"><span class="mono h-idx">·</span> Live proof<span class="accent">.</span></h2>
+        <p class="proof-sub-lede mono">every number here is fetched, not typed. missing data hides the tile.</p>
+      </div>
+      <div class="proof-strip" role="list" aria-live="polite" aria-atomic="false">
+        <article class="proof-tile" role="listitem" data-proof="stars" hidden aria-hidden="true">
+          <div class="proof-num mono" data-proof-num></div>
+          <div class="proof-sub mono" data-proof-sub>github stars</div>
+          <div class="proof-src mono">api.github.com</div>
+        </article>
+        <article class="proof-tile" role="listitem" data-proof="npm" hidden aria-hidden="true">
+          <div class="proof-num mono" data-proof-num></div>
+          <div class="proof-sub mono" data-proof-sub>npm · last week</div>
+          <div class="proof-src mono">api.npmjs.org</div>
+        </article>
+        <article class="proof-tile" role="listitem" data-proof="scans" hidden aria-hidden="true">
+          <div class="proof-num mono" data-proof-num></div>
+          <div class="proof-sub mono" data-proof-sub>site scans</div>
+          <div class="proof-src mono">vetlock-scan worker</div>
+        </article>
+        <article class="proof-tile proof-tile--health" role="listitem" data-proof="health" hidden aria-hidden="true">
+          <div class="proof-num mono" data-proof-num>
+            <span class="proof-dot" aria-hidden="true"></span><span>online</span>
+          </div>
+          <div class="proof-sub mono" data-proof-sub>backend health</div>
+          <div class="proof-src mono">/health · Cloudflare Worker</div>
+        </article>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p class="mono">hand-written HTML/CSS/JS · no frameworks, no cookies, no third-party trackers.</p>
+    <p class="mono dim">The lockfile scanner posts your lockfile once to a GitHub Actions workflow I control
+      (<a href="https://github.com/OJ-Uday/vetlock-web-scans" data-evt="footer.workflow">source</a>) and nothing else. The
+      telemetry console up top never leaves this tab.</p>
+    <p class="mono dim">© 2026 Uday Ojha · <a href="https://github.com/OJ-Uday/OJ-Uday.github.io" data-evt="footer.source">view source</a></p>
+  </footer>
+
+  <script src="/app.js" defer></script>
+  <script type="module">import init from '/design/theme.js'; init();</script>
+  <script type="module">
+    // Case-study boot: kick off reveal fade-in immediately; how-it-works
+    // and proof are lazy-loaded via IntersectionObserver below.
+    import initReveal from '/design/reveal.js';
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => initReveal(), { timeout: 500 });
+    } else {
+      setTimeout(() => initReveal(), 0);
+    }
+  </script>
+  <!-- Lazy-load the live-metrics strip. Same pattern the home page used
+       before the multi-page split: dynamic import + IO gate keeps the
+       first-view payload small. -->
+  <script type="module">
+    (function () {
+      var target = document.getElementById('proof');
+      if (!target) return;
+      function load() {
+        import('/design/proof.js').then(function (m) { m.default && m.default(); });
+      }
+      if (typeof IntersectionObserver === 'undefined') { load(); return; }
+      var io = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) { io.disconnect(); load(); return; }
+        }
+      }, { rootMargin: '200px 0px' });
+      io.observe(target);
+    })();
+  </script>
+  <!-- Lazy-load the how-it-works scrollytelling driver. -->
+  <script type="module">
+    (function () {
+      var target = document.getElementById('how-it-works');
+      if (!target) return;
+      function load() {
+        import('/design/how-it-works.js').then(function (m) { m.default && m.default(); });
+      }
+      if (typeof IntersectionObserver === 'undefined') { load(); return; }
+      var io = new IntersectionObserver(function (entries) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i].isIntersecting) { io.disconnect(); load(); return; }
+        }
+      }, { rootMargin: '400px 0px' });
+      io.observe(target);
+    })();
+  </script>
+</body>
+</html>

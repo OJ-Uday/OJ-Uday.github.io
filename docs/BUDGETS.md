@@ -15,7 +15,7 @@ The script starts an in-process Node HTTP server that gzips text responses (matc
 | Lighthouse Accessibility | 100 | >= 98 | PASS |
 | LCP (mobile, slow 4G) | 1861 ms | < 2000 ms | PASS |
 | CLS (mobile) | 0.000 | < 0.05 | PASS |
-| First-view transfer (gz est.) | 97.7 KB | < 200 KB | PASS |
+| First-view transfer (gz est.) | 55.4 KB | < 200 KB | PASS |
 | design/tokens.css size | 10.3 KB | < 15 KB | PASS |
 
 ## Detail: Lighthouse
@@ -36,34 +36,30 @@ The script starts an in-process Node HTTP server that gzips text responses (matc
 | Total transferred (LH) | 107.1 KB | 107.1 KB |
 | Requests (LH) | 16 | 16 |
 
+Note: Lighthouse rows show the last authoritative measurement (pre-multi-page split). The multi-page split removed scan.css / how-it-works.css / red-team.css / proof.js / how-it-works.js from the home page's critical path — first-view transfer dropped from 97.7 KB to 55.4 KB. The CI Lighthouse pass in `.github/workflows/checks.yml` will refresh these numbers on merge.
+
 ## Detail: First-view payload (raw HTTP)
 
 Same-origin assets that block first paint, byte-counted with a raw GET.
 
 | Asset | Kind | Bytes |
 | --- | --- | --- |
-| `/` | html | 91.6 KB |
+| `/` | html | 46.9 KB |
 | `/design/tokens.css` | css | 10.3 KB |
 | `/design/primitives.css` | css | 17.7 KB |
 | `/design/hero.css` | css | 12.4 KB |
-| `/design/scan.css` | css | 38.6 KB |
-| `/design/scan.css` | css | 38.6 KB |
 | `style.css` | css | 23.9 KB |
-| `/design/how-it-works.css` | css | 14.6 KB |
 | `/design/systems.css` | css | 6.5 KB |
-| `/design/red-team.css` | css | 8.9 KB |
 | `/design/projects.css` | css | 5.8 KB |
-| `/design/how-it-works.css` | css | 14.6 KB |
 | `/design/systems.css` | css | 6.5 KB |
-| `/design/red-team.css` | css | 8.9 KB |
 | `/design/projects.css` | css | 5.8 KB |
 | `app.js` | js | 72.2 KB |
-| **Total (raw)** |  | **376.8 KB** |
-| **Total (gz est.)** |  | **97.7 KB** |
+| **Total (raw)** |  | **208.1 KB** |
+| **Total (gz est.)** |  | **55.4 KB** |
 
 ---
 
-Generated: 2026-07-14T17:34:42.619Z
+Generated: 2026-07-14T19:22:19.746Z
 
 Tool versions:
 - node v20.19.2

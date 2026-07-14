@@ -131,7 +131,7 @@ test.beforeEach(async ({ page }) => {
 
 // ─── 1. Default mode is profile ──────────────────────────────────────────────
 test('default mode is profile', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/vetlock/');
   // The #scan section carries the current mode as a data attribute so CSS,
   // screen readers, and this test all read from one source of truth.
   await expect(page.locator('#scan')).toHaveAttribute('data-scan-mode', 'profile');
@@ -147,7 +147,7 @@ test('default mode is profile', async ({ page }) => {
 
 // ─── 2. Switching to diff exposes both dropzones ─────────────────────────────
 test('switching to diff shows two dropzones', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/vetlock/');
   await page.locator('#tab-diff').click();
   // The mode attribute flips; ARIA state flips; both panels swap visibility.
   await expect(page.locator('#scan')).toHaveAttribute('data-scan-mode', 'diff');
@@ -162,7 +162,7 @@ test('switching to diff shows two dropzones', async ({ page }) => {
 
 // ─── 3. Ecosystem detection — npm ────────────────────────────────────────────
 test('ecosystem detection npm', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/vetlock/');
   // Default mode is profile → drop into the single-artifact dropzone.
   await setDropzoneFile(page, '#dz-single', 'package-lock.json', MIN_PACKAGE_LOCK);
   const chip = page.locator('#sr-ecosystem');
@@ -174,7 +174,7 @@ test('ecosystem detection npm', async ({ page }) => {
 
 // ─── 4. Ecosystem detection — PyPI ───────────────────────────────────────────
 test('ecosystem detection pypi', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/vetlock/');
   await setDropzoneFile(page, '#dz-single', 'requirements.txt', MIN_REQUIREMENTS);
   const chip = page.locator('#sr-ecosystem');
   await expect(chip).toBeVisible();
@@ -186,7 +186,7 @@ test('ecosystem detection pypi', async ({ page }) => {
 test('permalink read-only replay', async ({ page }) => {
   const id = 'canned-id-123';
   await mockWorkerReady(page, id);
-  await page.goto(`/?scan=${id}`);
+  await page.goto(`/vetlock/?scan=${id}`);
   // The result panel is rendered with the canned verdict + counts pulled
   // from the mocked handleStatus response — bit-for-bit truthful.
   await expect(page.locator('#scan-result')).toBeVisible();
@@ -216,7 +216,7 @@ test('copy-JSON button', async ({ browser }) => {
   const page = await ctx.newPage();
   const id = 'canned-id-123';
   await mockWorkerReady(page, id);
-  await page.goto(`/?scan=${id}`);
+  await page.goto(`/vetlock/?scan=${id}`);
   const copy = page.locator('#sr-copy');
   await expect(copy).toBeVisible();
   await copy.click();
@@ -292,7 +292,7 @@ test('corpus-only guardrail on production origin', async ({ browser }) => {
     }
   });
 
-  await page.goto('https://oj-uday.github.io/', { waitUntil: 'domcontentloaded' });
+  await page.goto('https://oj-uday.github.io/vetlock/', { waitUntil: 'domcontentloaded' });
 
   // Sanity: applyLiveGate() ran because location.hostname !== 127.0.0.1 /
   // localhost / ::1. The gate stamps a data-attribute the CSS + this test
@@ -323,7 +323,7 @@ test('corpus-only guardrail on production origin', async ({ browser }) => {
   // the previous loadExample() were populated; hardResetScanner clears
   // them). Without this reload the "hasPair" branch of updateRunEnabled
   // would also be true, muddying which condition actually flipped Run.
-  await page.goto('https://oj-uday.github.io/', { waitUntil: 'domcontentloaded' });
+  await page.goto('https://oj-uday.github.io/vetlock/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('#scan-run')).toBeDisabled();
   await page.locator('#scan-example').click();
   await expect(page.locator('#scan-run')).toBeEnabled();
@@ -338,7 +338,7 @@ test('mobile scanner collapse still works', async ({ browser }) => {
   const page = await ctx.newPage();
   const id = 'canned-id-123';
   await mockWorkerReady(page, id);
-  await page.goto(`/?scan=${id}`);
+  await page.goto(`/vetlock/?scan=${id}`);
 
   // On mobile the OUTER <details.sr-details> wraps every severity group and
   // starts CLOSED — the tap-to-expand chip is the only visible child. This is

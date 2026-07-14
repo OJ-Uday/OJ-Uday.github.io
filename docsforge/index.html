@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en" id="top">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>docsforge — case study — Uday Ojha</title>
+  <!--
+    FOUC preflight — MUST stay inline in <head>, ahead of any stylesheet link.
+    Two jobs, both critical-path:
+      1) Stamp `js` on <html> so progressive-enhancement CSS gates (e.g.
+         `.js .reveal:not(.is-visible)` in primitives.css) apply BEFORE first
+         paint whenever JS is running — without JS the class is never added
+         and those rules never match, keeping content visible by default.
+      2) Read the persisted theme from localStorage and stamp data-theme on
+         <html> BEFORE the first paint. Any external script (even
+         /design/theme.js as a module) is deferred and would run after
+         tokens.css applies, causing a dark→light flash for light-mode users.
+    Kept minified to <250 bytes so it stays cheap on the critical path.
+  -->
+  <script>!function(){document.documentElement.classList.add("js");try{var t=localStorage.getItem("uday.theme");(t=="dark"||t=="light")&&(document.documentElement.dataset.theme=t)}catch(e){}}();</script>
+  <meta name="description" content="docsforge: reusable GitHub Actions workflow that auto-builds LaTeX, Word-via-docx, and Markdown-via-pandoc documents and publishes them to a rolling Release.">
+  <meta property="og:title" content="docsforge — case study — Uday Ojha">
+  <meta property="og:description" content="docsforge: reusable GitHub Actions workflow that auto-builds LaTeX, Word-via-docx, and Markdown-via-pandoc documents and publishes them to a rolling Release.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://oj-uday.github.io/docsforge/">
+  <meta property="og:image" content="https://oj-uday.github.io/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="uday.ojha — I build systems that watch systems.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="docsforge — case study — Uday Ojha">
+  <meta name="twitter:description" content="docsforge: reusable GitHub Actions workflow that auto-builds LaTeX, Word-via-docx, and Markdown-via-pandoc documents and publishes them to a rolling Release.">
+  <meta name="twitter:image" content="https://oj-uday.github.io/og-image.png">
+  <link rel="canonical" href="https://oj-uday.github.io/docsforge/">
+  <meta name="color-scheme" content="dark light">
+  <!-- Favicon: shared asset (single source, reused by /styleguide/). Was previously an inline data URL that
+       duplicated the same hardcoded brand hexes on both pages; centralizing here makes a retheme a one-file edit. -->
+  <link rel="icon" href="/design/favicon.svg" type="image/svg+xml">
+  <!-- Preload the render-blocking CSS so the browser starts fetching
+       immediately while the (large, content-heavy) HTML continues to
+       stream. Without these hints Chrome will wait to discover the
+       <link rel="stylesheet"> in tree order — with the page now ~100 KB
+       of inline SVG content, discovery drifts noticeably deeper into
+       the document, delaying FCP. Same URLs as the stylesheet links
+       below; the preload just moves the network fetch earlier. -->
+  <link rel="preload" href="/design/tokens.css"     as="style">
+  <link rel="preload" href="/design/primitives.css" as="style">
+  <link rel="preload" href="/style.css"             as="style">
+  <link rel="stylesheet" href="/design/tokens.css">
+  <link rel="stylesheet" href="/design/primitives.css">
+  <link rel="stylesheet" href="/design/hero.css">
+  <!-- Critical hero rules inlined so the LCP element (.lede) reaches its
+       FINAL rendered size at first paint, not after style.css finishes.
+       Without this, the .lede reflows from its browser-default box to
+       its final 380x200 box after style.css applies, which Lighthouse
+       credits as a fresh LCP frame and pushes LCP ~450 ms past FCP on
+       slow 4G. Duplicates a small handful of rules from style.css and
+       is kept tightly scoped (hero + LCP-adjacent nodes only) — the
+       full stylesheet is still loaded and remains authoritative.
+       #scan gets content-visibility:auto so its 200-line, 11 KB subtree
+       does not participate in layout during first paint (the browser
+       still parses it into the DOM, so JS still works; layout is
+       skipped until scroll gets close). Sub-1 KB total; no first-view
+       budget impact. -->
+  <style>
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);margin:0;line-height:1.65;font-size:16px}
+    main{max-width:1120px;margin:0 auto;padding:0 24px}
+    section{padding:64px 0 12px}
+    .hero{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center;min-height:78vh;padding-top:48px}
+    .kicker{color:var(--accent);font-family:var(--mono);font-size:.85rem;letter-spacing:.06em;text-transform:lowercase;margin:0}
+    h1{font-size:clamp(2.4rem,6.5vw,3.8rem);line-height:1.06;margin:10px 0 20px;letter-spacing:-.025em;font-weight:700}
+    .lede{color:var(--muted);font-size:1.08rem;max-width:34em}
+    @media (max-width:900px){.hero{grid-template-columns:1fr;min-height:0;gap:28px}}
+  </style>
+  <link rel="stylesheet" href="/style.css">
+  <!--
+    Below-fold section stylesheets are non-render-blocking. Each section
+    is off-screen at first paint (systems / projects), so blocking on
+    their CSS would only inflate LCP with no visual payoff. The
+    `media="print"` trick tells the browser this is a print-only sheet
+    (so it doesn't block first paint), then the onload handler flips it
+    back to `all` and the styles apply. The <noscript> fallback keeps
+    everything render-blocking (and therefore correctly styled) when JS
+    is off — matches our progressive-enhancement rule that content must
+    be readable without JS.
+  -->
+  <link rel="stylesheet" href="/design/systems.css"      media="print" onload="this.media='all'">
+  <link rel="stylesheet" href="/design/projects.css"     media="print" onload="this.media='all'">
+  <noscript>
+    <link rel="stylesheet" href="/design/systems.css">
+    <link rel="stylesheet" href="/design/projects.css">
+  </noscript>
+  <!-- Theme toggle needs JS to function; hide it when scripting is off so it doesn't look interactive-but-inert.
+       The .reveal override here is a belt-and-suspenders fallback: primitives.css already keeps .reveal visible
+       by default and only hides it when `html.js` is present (stamped by the preflight above), so no-JS clients
+       never see the pre-animation state. The <noscript> rule guarantees the same for the legacy .reveal in
+       style.css, and covers the edge case where a page loads style.css without the preflight. -->
+  <!-- With JS off: hide the theme toggle (interactive-but-inert), keep .reveal content visible (no animation),
+       hide the scanner mode-tab + panel machinery (P3 — JS-driven, would render as broken skeleton), and hide
+       the #proof section entirely (P4 — every tile stays [hidden] without JS, so header+lede would promise
+       numbers we can't deliver). -->
+  <noscript><style>.nav-theme-toggle{display:none}.reveal{opacity:1;transform:none}</style></noscript>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Uday Ojha",
+    "jobTitle": "Software Engineer",
+    "url": "https://oj-uday.github.io/",
+    "sameAs": ["https://github.com/OJ-Uday", "https://www.linkedin.com/in/uday-o/"]
+  }
+  </script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <a class="brand" href="/" data-evt="nav.brand"><span class="dot" aria-hidden="true"></span>uday.ojha</a>
+    <nav aria-label="Sections">
+      <a href="/vetlock/" data-evt="nav.vetlock">vetlock</a>
+      <a href="/#systems" data-evt="nav.systems">Systems</a>
+      <a href="/#projects" data-evt="nav.projects">Projects</a>
+      <a href="/#experience" data-evt="nav.experience">Experience</a>
+      <a href="/#writing" data-evt="nav.writing">Writing</a>
+      <a href="/#contact" data-evt="nav.contact">Contact</a>
+      <a href="/styleguide/" data-evt="nav.styleguide" class="nav-styleguide">styleguide</a>
+    </nav>
+    <a class="btn small" href="/resume.pdf" data-evt="resume.download">Résumé</a>
+    <button type="button"
+            class="btn btn--ghost btn--sm nav-theme-toggle"
+            data-theme-toggle
+            aria-label="Toggle theme"
+            aria-pressed="false"
+            title="Toggle theme (Shift+T)">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+    </button>
+  </header>
+
+  <main id="main">
+    <p class="back-link"><a href="/">↩ Back to portfolio</a></p>
+
+    <section id="docsforge-intro" class="section container">
+      <h1>docsforge</h1>
+      <p class="lede">
+        Reusable GitHub Actions workflow. Discovers <code>.docmeta.yml</code> files in a caller
+        repo, dispatches each doc to the matching builder (LaTeX / node-docx / markdown-pandoc),
+        runs the whole matrix in parallel, and publishes outputs to a rolling <code>latest</code>
+        release. Consumer wiring is three lines of YAML.
+      </p>
+    </section>
+
+    <section id="docsforge-details" class="section container">
+      <h2>Design choices</h2>
+      <ul>
+        <li>Fail-open discovery — malformed <code>.docmeta.yml</code> warns; other docs keep building.</li>
+        <li>Lockfile-survivor mode — node-docx auto-heals <code>package-lock.json</code> files that point at private registries the runner can't reach.</li>
+        <li>Parallel matrix — N docs → N concurrent legs, fail-fast off.</li>
+        <li>Concurrency-cancel — newer pushes preempt in-flight runs.</li>
+      </ul>
+
+      <h2>Consumer wiring</h2>
+      <pre><code class="lang-yaml">jobs:
+  build:
+    uses: OJ-Uday/docsforge/.github/workflows/build-docs.yml@main</code></pre>
+      <p>
+        Full architecture, <code>.docmeta.yml</code> schema, and a Mermaid diagram live in the
+        <a href="https://github.com/OJ-Uday/docsforge" data-evt="docsforge.readme">docsforge README</a>.
+      </p>
+    </section>
+
+    <section id="docsforge-links" class="section container">
+      <h2>Repos</h2>
+      <div class="chips">
+        <a href="https://github.com/OJ-Uday/docsforge" data-evt="docsforge.repo"><span>docsforge repo ↗</span></a>
+        <span>uday-docs (private)</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p class="mono">hand-written HTML/CSS/JS · no frameworks, no cookies, no third-party trackers.</p>
+    <p class="mono dim">The lockfile scanner posts your lockfile once to a GitHub Actions workflow I control
+      (<a href="https://github.com/OJ-Uday/vetlock-web-scans" data-evt="footer.workflow">source</a>) and nothing else. The
+      telemetry console up top never leaves this tab.</p>
+    <p class="mono dim">© 2026 Uday Ojha · <a href="https://github.com/OJ-Uday/OJ-Uday.github.io" data-evt="footer.source">view source</a></p>
+  </footer>
+
+  <script type="module">import init from '/design/theme.js'; init();</script>
+  <script type="module">
+    import initReveal from '/design/reveal.js';
+    const boot = () => initReveal();
+    if ('requestIdleCallback' in window) requestIdleCallback(boot, { timeout: 500 });
+    else setTimeout(boot, 0);
+  </script>
+</body>
+</html>
