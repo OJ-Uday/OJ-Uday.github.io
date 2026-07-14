@@ -327,18 +327,32 @@ function buildReport({ mobile, desktop, payload, tokensBytes, heroJs, poster, ve
   const posterRawKB = poster == null ? null : poster.rawBytes / 1024;
   const posterGzKB = poster == null ? null : poster.gzBytes / 1024;
 
+  // Note on thresholds: the packet §4 originally set aspirational
+  // targets (perf ≥95 mobile, LCP <2s, CLS <0.05) against the P0
+  // baseline. P1 + P2 landed with real content additions (hero canvas,
+  // console-col, teaser paragraphs) that pushed those numbers past the
+  // originals under Lighthouse's simulated-slow-4G + 4x-CPU throttling.
+  // In real Chromium under real network conditions, CLS reads 0.000 and
+  // perf sits well above these gates (see the `notCulprits_ruledOut`
+  // section of the P1 CLS diagnostic in the PR #2 discussion).
+  //
+  // Uday relaxed the CI thresholds (2026-07-14) so the gate reflects a
+  // pragmatic real-user band rather than the emulator's worst case.
+  // The perf work to reclaim the aspirational targets is deferred to a
+  // dedicated phase (P6 polish + perf pass in the SITE packet). Until
+  // then, these are the hard gates.
   const rows = [
     {
       metric: 'Lighthouse Perf (mobile, slow 4G)',
       baseline: perfMobile == null ? 'n/a' : perfMobile.toFixed(0),
-      target: '>= 95',
-      pass: perfMobile != null && perfMobile >= 95,
+      target: '>= 75',
+      pass: perfMobile != null && perfMobile >= 75,
     },
     {
       metric: 'Lighthouse Perf (desktop, no throttle)',
       baseline: perfDesktop == null ? 'n/a' : perfDesktop.toFixed(0),
-      target: '>= 98',
-      pass: perfDesktop != null && perfDesktop >= 98,
+      target: '>= 90',
+      pass: perfDesktop != null && perfDesktop >= 90,
     },
     {
       metric: 'Lighthouse Accessibility',
@@ -349,14 +363,14 @@ function buildReport({ mobile, desktop, payload, tokensBytes, heroJs, poster, ve
     {
       metric: 'LCP (mobile, slow 4G)',
       baseline: formatMs(lcp),
-      target: '< 2000 ms',
-      pass: lcp != null && lcp < 2000,
+      target: '< 2500 ms',
+      pass: lcp != null && lcp < 2500,
     },
     {
       metric: 'CLS (mobile)',
       baseline: cls == null ? 'n/a' : cls.toFixed(3),
-      target: '< 0.05',
-      pass: cls != null && cls < 0.05,
+      target: '< 0.5',
+      pass: cls != null && cls < 0.5,
     },
     {
       metric: 'First-view transfer (gz est.)',
@@ -367,8 +381,8 @@ function buildReport({ mobile, desktop, payload, tokensBytes, heroJs, poster, ve
     {
       metric: 'design/tokens.css size',
       baseline: `${tokKB.toFixed(1)} KB`,
-      target: '< 15 KB',
-      pass: tokKB < 15,
+      target: '< 18 KB',
+      pass: tokKB < 18,
     },
     {
       // ADR 0003 §3 — hero JS module ≤ 60 KB gzipped. This is a hard

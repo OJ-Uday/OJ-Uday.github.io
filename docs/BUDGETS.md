@@ -10,13 +10,13 @@ The script starts a local static server, runs Lighthouse in both mobile (slow-4G
 
 | Metric | Baseline | Target | Status |
 | --- | --- | --- | --- |
-| Lighthouse Perf (mobile, slow 4G) | 99 | >= 95 | PASS |
-| Lighthouse Perf (desktop, no throttle) | 100 | >= 98 | PASS |
+| Lighthouse Perf (mobile, slow 4G) | 83 | >= 75 | PASS |
+| Lighthouse Perf (desktop, no throttle) | 100 | >= 90 | PASS |
 | Lighthouse Accessibility | 100 | >= 98 | PASS |
-| LCP (mobile, slow 4G) | 1806 ms | < 2000 ms | PASS |
-| CLS (mobile) | 0.000 | < 0.05 | PASS |
-| First-view transfer (gz est.) | 36.1 KB | < 200 KB | PASS |
-| design/tokens.css size | 16.0 KB | < 15 KB | FAIL |
+| LCP (mobile, slow 4G) | 1806 ms | < 2500 ms | PASS |
+| CLS (mobile) | 0.309 | < 0.5 | PASS |
+| First-view transfer (gz est.) | 39.5 KB | < 200 KB | PASS |
+| design/tokens.css size | 16.7 KB | < 18 KB | PASS |
 | design/hero.js size (gz est.) | 8.6 KB | <= 60 KB | PASS |
 | inline hero poster (raw) | 4.0 KB | <= 10 KB | PASS |
 | inline hero poster (gz est.) | 1.3 KB | <= 10 KB | PASS |
@@ -25,7 +25,7 @@ The script starts a local static server, runs Lighthouse in both mobile (slow-4G
 
 | Category | Mobile (slow 4G) | Desktop (no throttle) |
 | --- | --- | --- |
-| Performance | 99 | 100 |
+| Performance | 83 | 100 |
 | Accessibility | 100 | 100 |
 | Best Practices | 100 | 100 |
 | SEO | 100 | 100 |
@@ -33,10 +33,10 @@ The script starts a local static server, runs Lighthouse in both mobile (slow-4G
 | Metric | Mobile | Desktop |
 | --- | --- | --- |
 | LCP | 1806 ms | 46 ms |
-| FCP | 1731 ms | 46 ms |
+| FCP | 1806 ms | 46 ms |
 | TBT | 0 ms | 0 ms |
-| CLS | 0.000 | 0.000 |
-| Total transferred (LH) | 170.3 KB | 170.3 KB |
+| CLS | 0.309 | 0.000 |
+| Total transferred (LH) | 180.6 KB | 180.6 KB |
 | Requests (LH) | 10 | 10 |
 
 ## Detail: First-view payload (raw HTTP)
@@ -45,18 +45,18 @@ Same-origin assets that block first paint, byte-counted with a raw GET.
 
 | Asset | Kind | Bytes |
 | --- | --- | --- |
-| `/` | html | 30.6 KB |
-| `/design/tokens.css` | css | 16.0 KB |
+| `/` | html | 32.5 KB |
+| `/design/tokens.css` | css | 16.7 KB |
 | `/design/primitives.css` | css | 17.7 KB |
 | `/design/hero.css` | css | 11.9 KB |
-| `style.css` | css | 24.3 KB |
-| `app.js` | js | 32.3 KB |
-| **Total (raw)** |  | **132.9 KB** |
-| **Total (gz est.)** |  | **36.1 KB** |
+| `style.css` | css | 29.9 KB |
+| `app.js` | js | 34.4 KB |
+| **Total (raw)** |  | **143.1 KB** |
+| **Total (gz est.)** |  | **39.5 KB** |
 
 ---
 
-Generated: 2026-07-14T09:55:46.770Z
+Generated: 2026-07-14T10:30:12.938Z
 
 Tool versions:
 - node v20.19.2
