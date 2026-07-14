@@ -96,8 +96,12 @@ test.describe('scanner mobile collapse', () => {
 
     // P3 introduced a mode-tabs UI with "Capability profile" as default;
     // this test drives the diff flow (before/after example fixtures), so
-    // switch to the diff tab first.
-    await page.locator('#tab-diff').click();
+    // switch to the diff tab first. Wait for the tab to be attached AND
+    // clickable — under CI the app.js wire-up can lag past the initial
+    // domcontentloaded and clicking a stale reference times out.
+    const diffTab = page.locator('#tab-diff');
+    await expect(diffTab).toBeVisible({ timeout: 10_000 });
+    await diffTab.click();
 
     // Seed the scanner with the malicious corpus example — that path goes
     // through dispatchScan()/pollUntilReady() so we exercise the real flow.
@@ -164,8 +168,11 @@ test.describe('scanner mobile collapse', () => {
     await page.goto('/');
 
     // P3 mode-tabs UI: default is "Capability profile"; this test uses the
-    // diff-mode example seed path, so switch tabs first.
-    await page.locator('#tab-diff').click();
+    // diff-mode example seed path, so switch tabs first. Wait for visibility
+    // before click so app.js has time to wire the tabs in CI.
+    const diffTab = page.locator('#tab-diff');
+    await expect(diffTab).toBeVisible({ timeout: 10_000 });
+    await diffTab.click();
 
     await page.locator('#scan-example').click();
     await expect(page.locator('#scan-run')).toBeEnabled();
