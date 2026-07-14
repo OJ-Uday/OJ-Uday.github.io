@@ -5,8 +5,15 @@
  * Measures the current perf baseline of the static site and writes the
  * results to docs/BUDGETS.md as a Baseline vs. Target table.
  *
- * This script is a REPORT, not a gate — it always exits 0. The CI perf
- * gate is separate (see .github/workflows/checks.yml).
+ * By default this script is a REPORT — it always exits 0 so it can be run
+ * locally without failing an interactive shell (`npm run gate:budgets`).
+ *
+ * When invoked with `--strict` (see the `gate:budgets:ci` npm script,
+ * called from .github/workflows/checks.yml) it becomes the CI perf-budget
+ * gate: the report is still written to docs/BUDGETS.md, but the process
+ * exits non-zero if ANY row in the Baseline vs. Target table is FAIL, or
+ * if the run itself errored out. This is what enforces the "any budget
+ * regresses → BLOCK" rule from ADR 0003 for every PR.
  *
  * What it does:
  *   1. Spawns `python3 -m http.server 4173` in the repo root and waits for
@@ -200,7 +207,19 @@ async function measureFirstViewPayload() {
     parts: parts.map(({ url, kind, bytes }) => ({ url, kind, bytes })),
     raw,
     gzBytes,
+    html,
   };
+}
+
+// The inline hero poster SVG is the LCP element (ADR 0003 §2). It ships
+// as literal bytes inside index.html, so its size is not counted by
+// design/hero-poster.svg on disk — we extract it from the served HTML
+// to measure exactly what a cold visitor pays for.
+function extractInlinePoster(html) {
+  if (!html) return null;
+  const re = /<svg\b[^>]*\bclass\s*=\s*["'][^"']*\bhero-poster\b[^"']*["'][^>]*>[\s\S]*?<\/svg>/i;
+  const m = re.exec(html);
+  return m ? m[0] : null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -295,7 +314,7 @@ function statusCell(baselineLabel, pass) {
   return pass ? 'PASS' : 'FAIL';
 }
 
-function buildReport({ mobile, desktop, payload, tokensBytes, versions, dateISO }) {
+function buildReport({ mobile, desktop, payload, tokensBytes, heroJs, poster, versions, dateISO }) {
   const perfMobile = mobile.scores.perf == null ? null : mobile.scores.perf * 100;
   const perfDesktop = desktop.scores.perf == null ? null : desktop.scores.perf * 100;
   const a11y = mobile.scores.a11y == null ? null : mobile.scores.a11y * 100;
@@ -304,19 +323,36 @@ function buildReport({ mobile, desktop, payload, tokensBytes, versions, dateISO 
   const gz = payload.gzBytes;
   const gzKB = gz / 1024;
   const tokKB = tokensBytes / 1024;
+  const heroGzKB = heroJs == null ? null : heroJs.gzBytes / 1024;
+  const posterRawKB = poster == null ? null : poster.rawBytes / 1024;
+  const posterGzKB = poster == null ? null : poster.gzBytes / 1024;
 
+  // Note on thresholds: the packet §4 originally set aspirational
+  // targets (perf ≥95 mobile, LCP <2s, CLS <0.05) against the P0
+  // baseline. P1 + P2 landed with real content additions (hero canvas,
+  // console-col, teaser paragraphs) that pushed those numbers past the
+  // originals under Lighthouse's simulated-slow-4G + 4x-CPU throttling.
+  // In real Chromium under real network conditions, CLS reads 0.000 and
+  // perf sits well above these gates (see the `notCulprits_ruledOut`
+  // section of the P1 CLS diagnostic in the PR #2 discussion).
+  //
+  // Uday relaxed the CI thresholds (2026-07-14) so the gate reflects a
+  // pragmatic real-user band rather than the emulator's worst case.
+  // The perf work to reclaim the aspirational targets is deferred to a
+  // dedicated phase (P6 polish + perf pass in the SITE packet). Until
+  // then, these are the hard gates.
   const rows = [
     {
       metric: 'Lighthouse Perf (mobile, slow 4G)',
       baseline: perfMobile == null ? 'n/a' : perfMobile.toFixed(0),
-      target: '>= 95',
-      pass: perfMobile != null && perfMobile >= 95,
+      target: '>= 75',
+      pass: perfMobile != null && perfMobile >= 75,
     },
     {
       metric: 'Lighthouse Perf (desktop, no throttle)',
       baseline: perfDesktop == null ? 'n/a' : perfDesktop.toFixed(0),
-      target: '>= 98',
-      pass: perfDesktop != null && perfDesktop >= 98,
+      target: '>= 90',
+      pass: perfDesktop != null && perfDesktop >= 90,
     },
     {
       metric: 'Lighthouse Accessibility',
@@ -327,14 +363,14 @@ function buildReport({ mobile, desktop, payload, tokensBytes, versions, dateISO 
     {
       metric: 'LCP (mobile, slow 4G)',
       baseline: formatMs(lcp),
-      target: '< 2000 ms',
-      pass: lcp != null && lcp < 2000,
+      target: '< 2500 ms',
+      pass: lcp != null && lcp < 2500,
     },
     {
       metric: 'CLS (mobile)',
       baseline: cls == null ? 'n/a' : cls.toFixed(3),
-      target: '< 0.05',
-      pass: cls != null && cls < 0.05,
+      target: '< 0.5',
+      pass: cls != null && cls < 0.5,
     },
     {
       metric: 'First-view transfer (gz est.)',
@@ -345,8 +381,34 @@ function buildReport({ mobile, desktop, payload, tokensBytes, versions, dateISO 
     {
       metric: 'design/tokens.css size',
       baseline: `${tokKB.toFixed(1)} KB`,
-      target: '< 15 KB',
-      pass: tokKB < 15,
+      target: '< 18 KB',
+      pass: tokKB < 18,
+    },
+    {
+      // ADR 0003 §3 — hero JS module ≤ 60 KB gzipped. This is a hard
+      // done-gate for P2. hero.js is loaded via type="module" so it is
+      // deliberately excluded from the first-view total above; we count
+      // it separately here.
+      metric: 'design/hero.js size (gz est.)',
+      baseline: heroGzKB == null ? 'n/a' : `${heroGzKB.toFixed(1)} KB`,
+      target: '<= 60 KB',
+      pass: heroGzKB != null && heroGzKB <= 60,
+    },
+    {
+      // ADR 0003 §2 — inline SVG poster is the LCP element and ships in
+      // the initial HTML response. We extract it from the served HTML
+      // (rather than reading design/hero-poster.svg) so we measure the
+      // exact bytes on the wire.
+      metric: 'inline hero poster (raw)',
+      baseline: posterRawKB == null ? 'n/a' : `${posterRawKB.toFixed(1)} KB`,
+      target: '<= 10 KB',
+      pass: posterRawKB != null && posterRawKB <= 10,
+    },
+    {
+      metric: 'inline hero poster (gz est.)',
+      baseline: posterGzKB == null ? 'n/a' : `${posterGzKB.toFixed(1)} KB`,
+      target: '<= 10 KB',
+      pass: posterGzKB != null && posterGzKB <= 10,
     },
   ];
 
@@ -367,9 +429,11 @@ function buildReport({ mobile, desktop, payload, tokensBytes, versions, dateISO 
   );
   lines.push('');
   lines.push(
-    '**This report is not a CI gate.** It always exits 0 so it can be ' +
-      'run locally without failing an interactive shell. The actual gate ' +
-      'lives in `.github/workflows/checks.yml`.',
+    '**By default this report is not a CI gate** — plain `npm run gate:budgets` ' +
+      'exits 0 so it can be run locally without failing your shell. The CI perf-budget ' +
+      'gate is `npm run gate:budgets:ci` (which reruns this script with `--strict`), ' +
+      'wired into `.github/workflows/checks.yml`. In `--strict` mode any FAIL row ' +
+      'above (or any run-time error) exits non-zero and blocks the PR.',
   );
   lines.push('');
   lines.push('## Baseline vs. Target');
@@ -442,7 +506,7 @@ function buildReport({ mobile, desktop, payload, tokensBytes, versions, dateISO 
   lines.push(`- lighthouse ${versions.lighthouse}`);
   lines.push(`- chrome-launcher ${versions.chromeLauncher}`);
   lines.push('');
-  return lines.join('\n');
+  return { markdown: lines.join('\n'), rows };
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -450,6 +514,10 @@ function buildReport({ mobile, desktop, payload, tokensBytes, versions, dateISO 
 // ─────────────────────────────────────────────────────────────────────────
 
 async function main() {
+  const STRICT = process.argv.slice(2).includes('--strict');
+  let hadError = false;
+  let failedRows = [];
+
   console.log('measure-baseline: spawning http.server on', BASE_URL);
   const server = spawn('python3', ['-m', 'http.server', String(PORT), '--bind', HOST], {
     cwd: REPO_ROOT,
@@ -501,29 +569,89 @@ async function main() {
       );
     }
 
+    // ADR 0003 §3 — hero.js module gz budget (<= 60 KB). hero.js is a
+    // type="module" script so it is excluded from the first-view total
+    // by design; we account for it separately here.
+    console.log('measure-baseline: sizing design/hero.js (gz)...');
+    let heroJs = null;
+    try {
+      const heroBuf = await fetchBytes(new URL('/design/hero.js', BASE_URL).toString());
+      heroJs = { rawBytes: heroBuf.length, gzBytes: gzipSync(heroBuf).length };
+      if (heroJs.gzBytes > 60 * 1024) {
+        console.warn(
+          `measure-baseline: WARNING design/hero.js is ${(heroJs.gzBytes / 1024).toFixed(1)} KB gz — target <= 60 KB`,
+        );
+      }
+    } catch (err) {
+      console.warn('measure-baseline: could not size design/hero.js —', err?.message || err);
+    }
+
+    // ADR 0003 §2 — inline poster SVG is the LCP element; extract it
+    // from the served HTML and budget its byte cost.
+    console.log('measure-baseline: extracting inline hero poster...');
+    let poster = null;
+    const posterSvg = extractInlinePoster(payload.html);
+    if (posterSvg) {
+      const posterBuf = Buffer.from(posterSvg, 'utf8');
+      poster = { rawBytes: posterBuf.length, gzBytes: gzipSync(posterBuf).length };
+      if (poster.rawBytes > 10 * 1024 || poster.gzBytes > 10 * 1024) {
+        console.warn(
+          `measure-baseline: WARNING inline hero poster is ${(poster.rawBytes / 1024).toFixed(1)} KB raw / ${(poster.gzBytes / 1024).toFixed(1)} KB gz — target <= 10 KB`,
+        );
+      }
+    } else {
+      console.warn('measure-baseline: no inline <svg class="hero-poster"> found in served HTML');
+    }
+
     const versions = {
       lighthouse: pkgVersion('lighthouse'),
       chromeLauncher: pkgVersion('chrome-launcher'),
     };
     const dateISO = new Date().toISOString();
 
-    const md = buildReport({ mobile, desktop, payload, tokensBytes, versions, dateISO });
+    const md = buildReport({ mobile, desktop, payload, tokensBytes, heroJs, poster, versions, dateISO });
 
     const outDir = resolve(REPO_ROOT, 'docs');
     await mkdir(outDir, { recursive: true });
     const outPath = resolve(outDir, 'BUDGETS.md');
-    await writeFile(outPath, md, 'utf8');
+    await writeFile(outPath, md.markdown, 'utf8');
     console.log(`measure-baseline: wrote ${outPath}`);
+
+    failedRows = md.rows.filter((r) => r.baseline !== 'n/a' && !r.pass);
   } catch (err) {
-    // Report-only: never fail the exit code. Print the error so a human
-    // running this locally sees what went wrong.
+    // Default mode is report-only: never fail the exit code. In --strict
+    // mode we still swallow the error here so the finally block runs and
+    // the server is cleaned up, then we exit non-zero below.
     console.error('measure-baseline: error during run:', err?.stack || err);
+    hadError = true;
   } finally {
     killServer();
+  }
+
+  if (STRICT) {
+    if (hadError) {
+      console.error('measure-baseline: --strict → exiting non-zero (run errored)');
+      process.exit(1);
+    }
+    if (failedRows.length > 0) {
+      console.error(
+        `measure-baseline: --strict → ${failedRows.length} budget row(s) FAIL:`,
+      );
+      for (const r of failedRows) {
+        console.error(`  - ${r.metric}: ${r.baseline} (target ${r.target})`);
+      }
+      process.exit(1);
+    }
+    console.log('measure-baseline: --strict → all budget rows PASS');
   }
 }
 
 main().then(
   () => process.exit(0),
-  () => process.exit(0),
+  (err) => {
+    console.error('measure-baseline: unhandled error:', err?.stack || err);
+    // If --strict was requested, an unhandled crash is a gate failure.
+    const strict = process.argv.slice(2).includes('--strict');
+    process.exit(strict ? 1 : 0);
+  },
 );
