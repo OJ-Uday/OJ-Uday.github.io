@@ -14,13 +14,22 @@
  * reader can tell at a glance this is decoration, not a captured artifact.
  * ===================================================================== */
 
-/* ── card override: remove default padding so preview can go edge-to-edge ── */
+/* ── card override: keep default padding on projects (preview removed) ── */
 .card.proj {
-  padding: 0;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
+/* Content wrapper. Padding restored here since .card.proj no longer needs
+   to host an edge-to-edge preview. .proj-body carries the chip row at the
+   bottom, so its flex-column layout keeps card contents anchored top +
+   chip row bottom regardless of description length. */
+.card.proj .proj-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  flex: 1;
+}
+.card.proj .proj-body .chips { margin-top: auto; }
 
 /* ── mini-preview strip ─────────────────────────────────────────────── */
 .proj-preview {
