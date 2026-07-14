@@ -46,6 +46,10 @@ kbd { font-family: var(--mono); font-size: 0.8em; background: var(--panel-2); co
 
 main { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 section { padding: 64px 0 12px; }
+/* When a nav link scrolls to a section, keep the section heading below
+   the sticky .nav (position:sticky, ~72px tall including padding + border).
+   Without this the sticky nav overlaps the top of the target section. */
+section[id] { scroll-margin-top: 72px; }
 
 h1 { font-size: clamp(2.4rem, 6.5vw, 3.8rem); line-height: 1.06; margin: 10px 0 20px; letter-spacing: -0.025em; font-weight: 700; }
 h1 .accent { color: var(--accent); }
@@ -271,7 +275,14 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
 .kh-body td:last-child { color: var(--muted); }
 
 /* ── reveal animation ───────────────────────────────────────────────── */
-.reveal { opacity: 0; transform: translateY(14px); transition: opacity 0.5s ease, transform 0.5s ease; }
+/* .reveal is defined in design/primitives.css with a JS-gated hidden state
+   (`.js .reveal:not(.in):not(.is-visible)` → opacity:0), so no-JS clients
+   see revealed content by default and screenshot/scrape tools that don't
+   scroll still capture readable content. The earlier unconditional
+   `opacity: 0` here silently broke that fallback — removed 2026-07-14.
+   The .reveal.in matcher below stays: primitives.css defines both `.in`
+   and `.is-visible`, and this rule is a no-op belt-and-suspenders in case
+   primitives.css is missing (defensive). */
 .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
