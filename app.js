@@ -678,6 +678,26 @@
       return;
     }
 
+    // Mobile collapse: wrap all severity groups in a single native <details>.
+    // Rendered <details open> so wide viewports see the full report; on
+    // viewports <=480px the inline matchMedia check below removes `open` so
+    // the panel collapses to the summary chip until tapped. The <summary>
+    // is hidden on wide screens via CSS (styled as a chip on mobile). Native
+    // <details> gives us keyboard toggle (Enter/Space), focusable summary,
+    // and an accessible expanded/collapsed state for free — no aria juggling,
+    // no JS required to toggle.
+    const details = document.createElement("details");
+    details.className = "sr-details";
+    details.open = true;
+    const summary = document.createElement("summary");
+    summary.className = "sr-summary mono";
+    const nFindings = findings.length;
+    const plural = nFindings === 1 ? "" : "s";
+    const labelFor = (open) => `${nFindings} finding${plural} — ${open ? "tap to collapse" : "tap to expand"}`;
+    summary.textContent = labelFor(details.open);
+    details.addEventListener("toggle", () => { summary.textContent = labelFor(details.open); });
+    details.appendChild(summary);
+
     // Group by severity → then by package
     const groups = { BLOCK: {}, WARN: {}, INFO: {} };
     for (const f of findings) {
@@ -718,8 +738,26 @@
         }
         groupEl.appendChild(pkgEl);
       }
-      body.appendChild(groupEl);
+      details.appendChild(groupEl);
     }
+    body.appendChild(details);
+
+    // Collapse on narrow viewports. Guarded — matchMedia is present in every
+    // supported browser, but the try/catch keeps hostile test envs safe.
+    // If the viewport later widens past 480px (rotation, resize, DevTools),
+    // re-open the details — the <summary> trigger is `display:none` on wide
+    // viewports (style.css:253), so a collapsed panel would otherwise leave
+    // no visible or keyboard-reachable way to reveal the report.
+    try {
+      if (window.matchMedia) {
+        const mql = window.matchMedia("(max-width: 480px)");
+        if (mql.matches) details.open = false;
+        const onChange = (e) => { if (!e.matches) details.open = true; };
+        if (mql.addEventListener) mql.addEventListener("change", onChange);
+        else if (mql.addListener) mql.addListener(onChange); // Safari <14 fallback
+      }
+    } catch { /* leave open if matchMedia throws */ }
+
     wireCopyBtn(result);
   }
 

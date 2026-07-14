@@ -97,6 +97,35 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
 .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
 
 /* ── console panel ──────────────────────────────────────────────────── */
+.console-col {
+  /* Wraps the disclaimer + noscript fallback + console so the hero grid
+     treats them as a single column. Small gap so the disclaimer reads as a
+     caption above the panel, not as a separate stacked card. */
+  display: flex; flex-direction: column; gap: var(--space-2);
+}
+.console-disclaimer {
+  /* Engineer-voice caption above the live panel — placed here (not in
+     .console-foot) so the reader sees the promise before the animating
+     feed. Uses fluid caption scale + muted text token for a neutral, low-
+     weight tone that matches the panel aesthetic. */
+  margin: 0;
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+  letter-spacing: var(--tracking-wide);
+}
+.console-nojs {
+  /* Rendered only when JS is disabled (via <noscript>). Explains why the
+     empty live panel is hidden and points at the source. Styled as a small
+     muted note that fits the space the console would occupy. */
+  margin: 0;
+  padding: var(--space-4);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-caption);
+  color: var(--color-text-muted);
+}
+.console-nojs a { color: var(--color-accent); }
 .console {
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-lg);
   overflow: hidden; box-shadow: var(--shadow);
@@ -238,6 +267,17 @@ h3 { font-size: 1.08rem; margin: 0 0 8px; }
 .sr-body::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 4px; }
 .sr-body::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
 
+/* Mobile-collapse wrapper. Wide viewports: <details> is always open and the
+   <summary> chip is hidden — the full report renders exactly as before.
+   Narrow (<=480px): app.js renders <details> closed; the chip below is the
+   only visible thing until the user taps it. Native <details> gives us
+   keyboard toggle (Enter/Space) + focusable summary + accessible expanded
+   state with zero JS and zero aria juggling. */
+.sr-details { display: block; }
+.sr-details > summary { display: none; }
+.sr-details > summary::-webkit-details-marker { display: none; }
+.sr-details > summary::marker { content: ""; }
+
 .sr-empty { text-align: center; padding: 30px 16px; color: var(--muted); }
 .sr-empty .sr-emoji { font-size: 2rem; display: block; margin-bottom: 8px; }
 
@@ -352,8 +392,15 @@ a.card:hover { text-decoration: none; }
 
 /* ── writing ────────────────────────────────────────────────────────── */
 .writing { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.writing li { display: block; }
 .writing a { font-weight: 600; }
-.writing span { color: var(--muted); font-size: 0.94rem; }
+.writing-teaser {
+  font: var(--fs-caption)/var(--lh-body) var(--font-sans);
+  color: var(--color-text-muted);
+  margin-top: var(--space-2);
+  margin-bottom: 0;
+  max-width: 60em;
+}
 
 /* ── contact / footer ───────────────────────────────────────────────── */
 .contact-lede { color: var(--muted); max-width: 40em; }
@@ -404,6 +451,43 @@ dialog.kbd-help::backdrop { background: var(--alpha-black-50); backdrop-filter: 
   .scan-inputs { grid-template-columns: 1fr; }
   .sp-stages { grid-template-columns: 1fr; gap: 10px; }
   .sp-stages li { justify-content: flex-start; }
+}
+@media (max-width: 480px) {
+  /* Header row: allow the pill, meta line, and Copy button to wrap so a
+     wide meta string doesn't push the button off-screen. */
+  .sr-head { flex-wrap: wrap; gap: 10px; }
+  .sr-head .btn { margin-left: 0; }
+  /* Reveal the collapsed summary chip that CSS hides on wide screens. When
+     <details> is closed the chip is the ONLY visible child of .sr-body, so
+     the panel reads as "verdict + count · tap to expand". */
+  .sr-details > summary {
+    display: block;
+    cursor: pointer;
+    padding: 10px 14px;
+    background: var(--panel-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+    user-select: none;
+  }
+  .sr-details > summary:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+  }
+  .sr-details > summary:focus-visible {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  /* When expanded on mobile, gap between the summary chip and the first
+     severity group. */
+  .sr-details[open] > summary { margin-bottom: 14px; }
+  /* Drop the internal scroll region on mobile — the whole page scrolls
+     naturally instead of a nested 500px box. */
+  .sr-body { max-height: none; padding: 14px; }
 }
 
 /* ── print ──────────────────────────────────────────────────────────── */
