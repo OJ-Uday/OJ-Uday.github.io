@@ -143,7 +143,7 @@
     <section class="hero" id="hero">
 
       <div class="hero-copy">
-        <p class="kicker">Uday Ojha · software engineer · Chandigarh, IN</p>
+        <p class="kicker">Uday Ojha · software engineer · Bangalore, IN</p>
         <a class="tag mono release-chip" href="https://github.com/OJ-Uday/vetlock/blob/main/CHANGELOG.md" data-evt="hero.release">
           <span class="tag-dot release-dot" aria-hidden="true"></span>Latest release: v0.4.2 · shipped 2026-07-14 · changelog →
         </a>
@@ -166,9 +166,15 @@
         </p>
       </div>
 
-          </div>
+      <aside class="console" aria-label="Live telemetry — this page's own events, captured in this tab and rendered in real time. Nothing is transmitted.">
+        <div class="console-bar">
+          <span class="console-title mono">this_tab · telemetry</span>
+          <span class="console-up mono" id="uptime" aria-hidden="true">0s</span>
+          <button type="button" id="fmt-toggle" class="console-fmt mono" aria-label="Toggle event format between human-readable and JSON">human</button>
         </div>
-      </div>
+        <div class="feed" id="feed" role="log" aria-live="off" aria-label="Live telemetry event feed"></div>
+        <p class="console-foot">Real events from this browser tab — rendered here, never transmitted.</p>
+      </aside>
     </section>
 
     <!-- ───────────────────────── systems ─────────────────────────
