@@ -23,6 +23,7 @@
   <meta property="og:description" content="Zero-dependency browser telemetry SDK: batching queue with retry/beacon drain, micro-frontend event bridge, pluggable auth, delegated auto-capture.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://oj-uday.github.io/telemetry-sdk-patterns/">
+  <link rel="canonical" href="https://oj-uday.github.io/telemetry-sdk-patterns/">
   <meta property="og:image" content="https://oj-uday.github.io/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -111,6 +112,11 @@
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
+  <div class="hero-bg site-bg" aria-hidden="true" data-hero-state="poster">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Hero decorative visualization — dependency graph watched by a sweep; one node flagged in danger red." class="hero-poster" style="color:var(--color-text-dim)"><defs><radialGradient id="s" cx="216" cy="302" r="770" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="var(--color-accent)" stop-opacity=".18"/><stop offset=".55" stop-color="var(--color-accent)" stop-opacity=".06"/><stop offset="1" stop-color="var(--color-accent)" stop-opacity="0"/></radialGradient></defs><rect width="1200" height="720" fill="url(#s)"/><path d="M216 302L256 238M216 302L307 368M840 455L920 402M840 455L838 532M360 703L388 643M360 703L262 628M526 618L623 587M526 618L471 549M1070 158L1055 102M1070 158L1168 178M475 380L496 301M475 380L346 429M179 193L152 133M179 193L256 238M945 156L925 228M1070 158L945 156M524 475L471 549M475 380L524 475M653 220L622 284M653 220L704 155M1080 23L1055 102M1080 23L962 71M258 38L348 33M258 38L315 128M1048 658L961 606M1048 658L920 664M82 45L152 133M258 38L82 45M479 186L408 132M653 220L479 186M1030 328L1010 259M1030 328L1147 289M920 664L961 606M216 302L33 312M33 312L69 196M346 429L307 368M819 106L816 32M819 106L704 155M653 354L622 284M653 354L496 301M816 32L962 71M812 239L925 228M653 220L812 239M152 133L69 196M838 532L816 603M179 193L69 196M388 643L262 628M92 550L180 519M92 550L112 483M496 301L622 284M712 602L623 587M712 602L816 603M315 128L408 132M1168 178L1055 102M871 353L920 402M1030 328L871 353M122 646L262 628M92 550L122 646M471 549L324 545M324 545L180 519M476 36L348 33M476 36L408 132M180 519L112 483M1012 455L920 402M1012 455L1114 397M962 71L1055 102M1048 658L1139 596M1139 596L961 606M925 228L1010 259M1147 289L1165 348M1165 348L1114 397M920 664L792 694M816 603L792 694" fill="none" stroke="var(--color-text-muted)" stroke-width="1" opacity=".35"/><circle cx="216" cy="302" r="770" fill="none" stroke="var(--color-accent)" stroke-width="1.5" opacity=".35"/><g fill="currentColor"><circle cx="840" cy="455" r="5"/><circle cx="360" cy="703" r="3"/><circle cx="526" cy="618" r="5"/><circle cx="1070" cy="158" r="3"/><circle cx="475" cy="380" r="3"/><circle cx="179" cy="193" r="5"/><circle cx="524" cy="475" r="7"/><circle cx="653" cy="220" r="3"/><circle cx="1080" cy="23" r="3"/><circle cx="258" cy="38" r="5"/><circle cx="1048" cy="658" r="3"/><circle cx="82" cy="45" r="3"/><circle cx="479" cy="186" r="5"/><circle cx="1030" cy="328" r="3"/><circle cx="920" cy="664" r="5"/><circle cx="33" cy="312" r="3"/><circle cx="471" cy="549" r="3"/><circle cx="346" cy="429" r="5"/><circle cx="819" cy="106" r="3"/><circle cx="653" cy="354" r="7"/><circle cx="256" cy="238" r="3"/><circle cx="816" cy="32" r="3"/><circle cx="812" cy="239" r="5"/><circle cx="152" cy="133" r="3"/><circle cx="838" cy="532" r="3"/><circle cx="69" cy="196" r="5"/><circle cx="388" cy="643" r="3"/><circle cx="92" cy="550" r="7"/><circle cx="496" cy="301" r="3"/><circle cx="712" cy="602" r="3"/><circle cx="315" cy="128" r="5"/><circle cx="1168" cy="178" r="3"/><circle cx="871" cy="353" r="3"/><circle cx="122" cy="646" r="5"/><circle cx="704" cy="155" r="3"/><circle cx="324" cy="545" r="5"/><circle cx="476" cy="36" r="3"/><circle cx="180" cy="519" r="3"/><circle cx="112" cy="483" r="5"/><circle cx="408" cy="132" r="3"/><circle cx="816" cy="603" r="7"/><circle cx="1012" cy="455" r="3"/><circle cx="962" cy="71" r="3"/><circle cx="307" cy="368" r="5"/><circle cx="348" cy="33" r="3"/><circle cx="1139" cy="596" r="3"/><circle cx="925" cy="228" r="5"/><circle cx="920" cy="402" r="3"/><circle cx="1147" cy="289" r="7"/><circle cx="1055" cy="102" r="3"/><circle cx="1165" cy="348" r="3"/><circle cx="623" cy="587" r="5"/><circle cx="1010" cy="259" r="3"/><circle cx="622" cy="284" r="7"/><circle cx="1114" cy="397" r="5"/><circle cx="262" cy="628" r="3"/><circle cx="792" cy="694" r="5"/><circle cx="961" cy="606" r="3"/></g><circle cx="216" cy="302" r="7" fill="var(--color-accent)"/><circle cx="945" cy="156" r="7" fill="var(--color-danger)"/></svg>
+    <canvas class="hero-canvas" aria-hidden="true" data-hero-canvas></canvas>
+  </div>
+
   <header class="nav">
     <a class="brand" href="/" data-evt="nav.brand"><span class="dot" aria-hidden="true"></span>uday.ojha</a>
     <nav aria-label="Sections">
@@ -171,8 +177,16 @@
 
   <script type="module">import init from '/design/theme.js'; init();</script>
   <script type="module">
+    import initHero from '/design/hero.js';
     import initReveal from '/design/reveal.js';
-    const boot = () => initReveal();
+    // hero.js drives the site-wide animated canvas backdrop — .hero-bg
+    // lives at body level on every page, so every route ships the same
+    // graph poster + canvas enhancement.
+    const boot = () => {
+      const canvas = document.querySelector('[data-hero-canvas]');
+      if (canvas) initHero(canvas);
+      initReveal();
+    };
     if ('requestIdleCallback' in window) requestIdleCallback(boot, { timeout: 500 });
     else setTimeout(boot, 0);
   </script>

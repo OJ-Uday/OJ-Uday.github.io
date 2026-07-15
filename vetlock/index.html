@@ -23,6 +23,7 @@
   <meta property="og:description" content="vetlock: behavioral diff for npm dependency updates. Try the bundled demo, see how the pipeline works, view live metrics.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://oj-uday.github.io/vetlock/">
+  <link rel="canonical" href="https://oj-uday.github.io/vetlock/">
   <meta property="og:image" content="https://oj-uday.github.io/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -126,6 +127,11 @@
 <body>
   <a class="skip" href="#main">Skip to content</a>
 
+  <div class="hero-bg site-bg" aria-hidden="true" data-hero-state="poster">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Hero decorative visualization — dependency graph watched by a sweep; one node flagged in danger red." class="hero-poster" style="color:var(--color-text-dim)"><defs><radialGradient id="s" cx="216" cy="302" r="770" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="var(--color-accent)" stop-opacity=".18"/><stop offset=".55" stop-color="var(--color-accent)" stop-opacity=".06"/><stop offset="1" stop-color="var(--color-accent)" stop-opacity="0"/></radialGradient></defs><rect width="1200" height="720" fill="url(#s)"/><path d="M216 302L256 238M216 302L307 368M840 455L920 402M840 455L838 532M360 703L388 643M360 703L262 628M526 618L623 587M526 618L471 549M1070 158L1055 102M1070 158L1168 178M475 380L496 301M475 380L346 429M179 193L152 133M179 193L256 238M945 156L925 228M1070 158L945 156M524 475L471 549M475 380L524 475M653 220L622 284M653 220L704 155M1080 23L1055 102M1080 23L962 71M258 38L348 33M258 38L315 128M1048 658L961 606M1048 658L920 664M82 45L152 133M258 38L82 45M479 186L408 132M653 220L479 186M1030 328L1010 259M1030 328L1147 289M920 664L961 606M216 302L33 312M33 312L69 196M346 429L307 368M819 106L816 32M819 106L704 155M653 354L622 284M653 354L496 301M816 32L962 71M812 239L925 228M653 220L812 239M152 133L69 196M838 532L816 603M179 193L69 196M388 643L262 628M92 550L180 519M92 550L112 483M496 301L622 284M712 602L623 587M712 602L816 603M315 128L408 132M1168 178L1055 102M871 353L920 402M1030 328L871 353M122 646L262 628M92 550L122 646M471 549L324 545M324 545L180 519M476 36L348 33M476 36L408 132M180 519L112 483M1012 455L920 402M1012 455L1114 397M962 71L1055 102M1048 658L1139 596M1139 596L961 606M925 228L1010 259M1147 289L1165 348M1165 348L1114 397M920 664L792 694M816 603L792 694" fill="none" stroke="var(--color-text-muted)" stroke-width="1" opacity=".35"/><circle cx="216" cy="302" r="770" fill="none" stroke="var(--color-accent)" stroke-width="1.5" opacity=".35"/><g fill="currentColor"><circle cx="840" cy="455" r="5"/><circle cx="360" cy="703" r="3"/><circle cx="526" cy="618" r="5"/><circle cx="1070" cy="158" r="3"/><circle cx="475" cy="380" r="3"/><circle cx="179" cy="193" r="5"/><circle cx="524" cy="475" r="7"/><circle cx="653" cy="220" r="3"/><circle cx="1080" cy="23" r="3"/><circle cx="258" cy="38" r="5"/><circle cx="1048" cy="658" r="3"/><circle cx="82" cy="45" r="3"/><circle cx="479" cy="186" r="5"/><circle cx="1030" cy="328" r="3"/><circle cx="920" cy="664" r="5"/><circle cx="33" cy="312" r="3"/><circle cx="471" cy="549" r="3"/><circle cx="346" cy="429" r="5"/><circle cx="819" cy="106" r="3"/><circle cx="653" cy="354" r="7"/><circle cx="256" cy="238" r="3"/><circle cx="816" cy="32" r="3"/><circle cx="812" cy="239" r="5"/><circle cx="152" cy="133" r="3"/><circle cx="838" cy="532" r="3"/><circle cx="69" cy="196" r="5"/><circle cx="388" cy="643" r="3"/><circle cx="92" cy="550" r="7"/><circle cx="496" cy="301" r="3"/><circle cx="712" cy="602" r="3"/><circle cx="315" cy="128" r="5"/><circle cx="1168" cy="178" r="3"/><circle cx="871" cy="353" r="3"/><circle cx="122" cy="646" r="5"/><circle cx="704" cy="155" r="3"/><circle cx="324" cy="545" r="5"/><circle cx="476" cy="36" r="3"/><circle cx="180" cy="519" r="3"/><circle cx="112" cy="483" r="5"/><circle cx="408" cy="132" r="3"/><circle cx="816" cy="603" r="7"/><circle cx="1012" cy="455" r="3"/><circle cx="962" cy="71" r="3"/><circle cx="307" cy="368" r="5"/><circle cx="348" cy="33" r="3"/><circle cx="1139" cy="596" r="3"/><circle cx="925" cy="228" r="5"/><circle cx="920" cy="402" r="3"/><circle cx="1147" cy="289" r="7"/><circle cx="1055" cy="102" r="3"/><circle cx="1165" cy="348" r="3"/><circle cx="623" cy="587" r="5"/><circle cx="1010" cy="259" r="3"/><circle cx="622" cy="284" r="7"/><circle cx="1114" cy="397" r="5"/><circle cx="262" cy="628" r="3"/><circle cx="792" cy="694" r="5"/><circle cx="961" cy="606" r="3"/></g><circle cx="216" cy="302" r="7" fill="var(--color-accent)"/><circle cx="945" cy="156" r="7" fill="var(--color-danger)"/></svg>
+    <canvas class="hero-canvas" aria-hidden="true" data-hero-canvas></canvas>
+  </div>
+
   <header class="nav">
     <a class="brand" href="/" data-evt="nav.brand"><span class="dot" aria-hidden="true"></span>uday.ojha</a>
     <nav aria-label="Sections">
@@ -153,9 +159,15 @@
     <section id="vetlock-intro" class="section container">
       <h1>vetlock</h1>
       <p class="lede">
-        Behavioral diff for npm dependency updates. 17 detectors, HMAC-authed cache,
-        Damerau-Levenshtein typosquat matching, GHSA adjacency. Below: try the bundled
-        demo, walk the pipeline, and see live metrics.
+        Behavioral diff for dependency updates &mdash; what does this update <em>do</em>
+        now that it didn't before? Runs on npm/yarn/pnpm and PyPI/Poetry/uv, ships as
+        a CLI + GitHub Action + hosted HTTP API. 17 detectors across 10 security
+        categories, 540 passing tests, 92.3% detection on the corpus vs npm audit's
+        53.8%. Zero telemetry.
+      </p>
+      <p class="lede">
+        Below: try the bundled demo, walk the 9-stage pipeline, see live metrics, and
+        read the current release story.
       </p>
     </section>
 
@@ -353,11 +365,13 @@
       <div class="hiw__intro">
         <h2 id="hiw-title"><span class="mono h-idx">·</span> How vetlock works</h2>
         <p class="hiw__lede">
-          Six stages, one guarantee: <em>no package code ever runs</em>. vetlock reads
-          <strong>two lockfiles</strong> — the one you shipped and the one you're about to
-          ship — and walks the dependency delta without running a single line of
-          package code. What you see below is <strong>the actual pipeline</strong>:
-          diff, changed-set, recursive fetch, detectors, provenance graph, verdict.
+          Nine stages, grouped into six panels for readability &mdash; one guarantee:
+          <em>no package code ever runs</em>.
+          vetlock reads <strong>two lockfiles</strong> &mdash; the one you shipped and the one
+          you're about to ship &mdash; and walks the dependency delta without running a
+          single line of package code. What you see below is <strong>the actual pipeline</strong>:
+          lockfile parse + diff, changed-set, recursive fetch + safe extraction, AST capability
+          extraction + detectors, provenance + escalation, verdict + output.
         </p>
       </div>
 
@@ -407,13 +421,14 @@
         <ol class="hiw__stages">
 
           <li class="hiw__stage" id="hiw-stage-1" data-stage="1">
-            <span class="hiw__stage-num mono">stage 01 · diff</span>
-            <h3>Lockfile diff</h3>
+            <span class="hiw__stage-num mono">stage 01 · lockfile parse + diff</span>
+            <h3>Lockfile parse + diff</h3>
             <p>
-              Two <code>package-lock.json</code> files in, one structural delta out.
-              vetlock parses each lockfile deterministically and emits <strong>added</strong>,
-              <strong>removed</strong>, and <strong>version-changed</strong> entries — no
-              network, no code, just the tree of what actually shipped.
+              <strong>npm / yarn / pnpm / PyPI / Poetry / uv</strong> lockfiles in, one
+              structural delta out. vetlock parses each lockfile deterministically for
+              its ecosystem and emits <strong>added</strong>, <strong>removed</strong>,
+              and <strong>version-changed</strong> entries &mdash; no network, no code,
+              just the change-set of what actually shipped.
             </p>
             <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Diff of two package-lock.json files. Left panel labeled 'before' lists axios 1.6.2 unchanged; right panel labeled 'after' shows axios bumped to 1.7.9 and a new @scoped/util 1.0.0 entry added."><rect x="14" y="18" width="140" height="200" rx="6" class="g-node"/><rect x="166" y="18" width="140" height="200" rx="6" class="g-node"/><text x="24" y="34">before</text><text x="176" y="34">after</text><text x="28" y="52" class="n-label-sm">"lodash": "4.17.21"</text><text x="180" y="52" class="n-label-sm">"lodash": "4.17.21"</text><rect x="22" y="58" width="124" height="14" class="g-diff-del-bg"/><text x="26" y="69" class="g-diff-del">-</text><text x="34" y="69" class="n-label-sm">"axios": "1.6.2"</text><rect x="174" y="58" width="124" height="14" class="g-diff-add-bg"/><text x="178" y="69" class="g-diff-add">+</text><text x="186" y="69" class="n-label-sm">"axios": "1.7.9"</text><text x="28" y="88" class="n-label-sm">"chalk": "5.3.0"</text><text x="180" y="88" class="n-label-sm">"chalk": "5.3.0"</text><rect x="174" y="94" width="124" height="14" class="g-diff-add-bg"/><text x="178" y="105" class="g-diff-add">+</text><text x="186" y="105" class="n-label-sm">"@scoped/util": "1.0.0"</text><text x="28" y="124" class="n-label-sm">"zod": "3.22.4"</text><text x="180" y="124" class="n-label-sm">"zod": "3.23.8"</text><text x="160" y="200" class="n-callout" text-anchor="middle">two lockfiles → structural delta</text></svg>
           </li>
@@ -431,55 +446,147 @@
           </li>
 
           <li class="hiw__stage" id="hiw-stage-3" data-stage="3">
-            <span class="hiw__stage-num mono">stage 03 · recursive fetch</span>
-            <h3>Recursive fetch</h3>
+            <span class="hiw__stage-num mono">stage 03 · recursive fetch + safe extraction</span>
+            <h3>Recursive fetch + safe extraction</h3>
             <p>
               For each changed root, vetlock walks its <strong>full transitive closure</strong>
-              via the npm registry — HMAC-authed cache in front, so a real repo scan hits the
-              network once and reuses the tarballs across every subsequent detector.
-              Nothing is executed; tarballs are only parsed.
+              &mdash; via <code>pacote</code> for npm, the PyPI JSON API for Python. Each
+              tarball is unpacked through <strong>safe extraction</strong> that rejects
+              zip-slip, symlink escape, and tarbomb paths. Nothing is executed; tarballs
+              are only parsed.
             </p>
             <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Same dependency tree with animated flow arrows from the changed roots axios and @scoped/util down through their transitive dependencies, showing the recursive fetch walking the closure."><rect x="130" y="26" width="60" height="24" rx="4" class="g-node"/><text x="160" y="42" text-anchor="middle">app</text><rect x="34" y="96" width="60" height="24" rx="4" class="g-node"/><text x="64" y="112" text-anchor="middle">chalk</text><rect x="130" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="112" text-anchor="middle" class="n-callout">axios</text><rect x="226" y="96" width="60" height="24" rx="4" class="g-node--emph"/><text x="256" y="112" text-anchor="middle" class="n-callout">@scoped/util</text><rect x="34" y="170" width="60" height="24" rx="4" class="g-node"/><text x="64" y="186" text-anchor="middle" class="n-label-sm">ansi</text><rect x="130" y="170" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="186" text-anchor="middle" class="n-label-sm n-callout">follow-redirects</text><rect x="226" y="170" width="60" height="24" rx="4" class="g-node--emph"/><text x="256" y="186" text-anchor="middle" class="n-label-sm n-callout">encode</text><path d="M160 50 L64 96" class="g-edge"/><path d="M160 50 L160 96" class="g-edge--flow"/><path d="M160 50 L256 96" class="g-edge--flow"/><path d="M64 120 L64 170" class="g-edge"/><path d="M160 120 L160 170" class="g-edge--flow"/><path d="M256 120 L256 170" class="g-edge--flow"/><text x="160" y="222" class="n-callout" text-anchor="middle">registry tarballs · HMAC-authed cache</text></svg>
           </li>
 
           <li class="hiw__stage" id="hiw-stage-4" data-stage="4">
-            <span class="hiw__stage-num mono">stage 04 · detectors</span>
-            <h3>Detectors run</h3>
+            <span class="hiw__stage-num mono">stage 04 · AST capability extraction + detectors</span>
+            <h3>AST capability extraction + 17 detectors</h3>
             <p>
-              <strong>Seventeen static detectors</strong> pass over each tarball: install-script
-              shape, new endpoints, env-token harvest patterns, obfuscation deltas, integrity
-              tampering, typosquat neighbors, and more. Every detector emits <em>evidence</em> —
-              file, line, capability. Never a claim without a citation.
+              Each tarball is parsed with <strong>Babel</strong> (constant folding + alias
+              tracking) for JS/TS, and text-based extraction for Python &mdash; the
+              <em>never-execute</em> invariant holds across both ecosystems. Then
+              <strong>seventeen static detectors</strong> pass over the extracted capabilities
+              behind an HMAC-authed cache: install-script shape, new endpoints, env-token
+              harvest, obfuscation deltas, integrity tampering, typosquat neighbors, and more.
+              Every detector emits <em>evidence</em> &mdash; file, line, capability. Never a
+              claim without a citation.
             </p>
             <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="A single changed package (axios) fans out to six detector chips — install-script, new endpoint, env-token harvest, obfuscation delta, typosquat, integrity mismatch. Env-token harvest is marked as a BLOCK-severity finding."><rect x="130" y="20" width="60" height="24" rx="4" class="g-node"/><text x="160" y="36" text-anchor="middle">app</text><rect x="130" y="80" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="96" text-anchor="middle" class="n-callout">axios</text><path d="M160 44 L160 80" class="g-edge"/><rect x="20" y="118" width="80" height="18" rx="9" class="g-pill--warn"/><text x="60" y="130" text-anchor="middle" class="t-on-warn n-label-sm">install-script</text><rect x="110" y="118" width="80" height="18" rx="9" class="g-pill--warn"/><text x="150" y="130" text-anchor="middle" class="t-on-warn n-label-sm">new endpoint</text><rect x="200" y="118" width="100" height="18" rx="9" class="g-pill--block"/><text x="250" y="130" text-anchor="middle" class="t-on-block n-label-sm">env-token harvest</text><rect x="20" y="146" width="80" height="18" rx="9" class="g-pill"/><text x="60" y="158" text-anchor="middle" class="n-label-sm">obfuscation Δ</text><rect x="110" y="146" width="80" height="18" rx="9" class="g-pill"/><text x="150" y="158" text-anchor="middle" class="n-label-sm">typosquat</text><rect x="200" y="146" width="100" height="18" rx="9" class="g-pill"/><text x="250" y="158" text-anchor="middle" class="n-label-sm">integrity mismatch</text><path d="M160 104 L60 118" class="g-edge"/><path d="M160 104 L150 118" class="g-edge"/><path d="M160 104 L250 118" class="g-edge--warn"/><text x="160" y="200" class="n-callout" text-anchor="middle">17 detectors · static-only · no code executed</text></svg>
           </li>
 
           <li class="hiw__stage" id="hiw-stage-5" data-stage="5">
-            <span class="hiw__stage-num mono">stage 05 · provenance</span>
-            <h3>Provenance graph</h3>
+            <span class="hiw__stage-num mono">stage 05 · provenance + escalation</span>
+            <h3>Provenance + escalation</h3>
             <p>
-              Findings alone aren't enough — every node in the changed closure carries
-              its <strong>origin, integrity, and adjacency</strong>: which registry
-              published it, which signatures match, and how close it lies to a known
-              advisory or typosquat cluster. Provenance is what turns a detector hit
-              into a decision.
+              Findings alone aren't enough &mdash; every node in the changed closure carries
+              its <strong>origin, integrity, and adjacency</strong>: which registry published
+              it, which signatures match, and how close it lies to a known advisory or
+              typosquat cluster. Explicit <strong>escalation rules</strong> then promote
+              <em>WARN&nbsp;&rarr;&nbsp;BLOCK</em> when signals co-occur &mdash; a lone
+              install-script is a WARN, an install-script beside an env-token harvester is
+              a BLOCK. Provenance + escalation is what turns detector hits into decisions.
             </p>
             <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Dependency tree annotated with provenance labels — chalk npm-signed, axios npm-signed, @scoped/util marked as 3 days old on npm with a warning color."><rect x="130" y="20" width="60" height="24" rx="4" class="g-node"/><text x="160" y="36" text-anchor="middle">app</text><rect x="34" y="86" width="60" height="24" rx="4" class="g-node"/><text x="64" y="102" text-anchor="middle">chalk</text><rect x="130" y="86" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="102" text-anchor="middle" class="n-callout">axios</text><rect x="226" y="86" width="60" height="24" rx="4" class="g-node--warn"/><text x="256" y="102" text-anchor="middle" class="n-warn">@scoped/util</text><rect x="34" y="156" width="60" height="24" rx="4" class="g-node"/><text x="64" y="172" text-anchor="middle" class="n-label-sm">ansi</text><rect x="130" y="156" width="60" height="24" rx="4" class="g-node--emph"/><text x="160" y="172" text-anchor="middle" class="n-label-sm n-callout">follow-redirects</text><rect x="226" y="156" width="60" height="24" rx="4" class="g-node--warn"/><text x="256" y="172" text-anchor="middle" class="n-label-sm n-warn">encode</text><path d="M160 44 L64 86" class="g-edge"/><path d="M160 44 L160 86" class="g-edge--emph"/><path d="M160 44 L256 86" class="g-edge--warn"/><path d="M64 110 L64 156" class="g-edge"/><path d="M160 110 L160 156" class="g-edge--emph"/><path d="M256 110 L256 156" class="g-edge--warn"/><text x="64" y="200" text-anchor="middle" class="n-label-sm">npm · signed</text><text x="160" y="200" text-anchor="middle" class="n-label-sm n-callout">npm · signed</text><text x="256" y="200" text-anchor="middle" class="n-label-sm n-warn">npm · 3d old</text><text x="160" y="222" class="n-callout" text-anchor="middle">origin, integrity, adjacency · GHSA + typosquat</text></svg>
           </li>
 
           <li class="hiw__stage" id="hiw-stage-6" data-stage="6">
-            <span class="hiw__stage-num mono">stage 06 · verdict</span>
-            <h3>Verdict</h3>
+            <span class="hiw__stage-num mono">stage 06 · verdict + output</span>
+            <h3>Verdict + output</h3>
             <p>
-              A per-package severity (<em>CLEAN</em>, <em>WARN</em>, <em>BLOCK</em>) and
-              a whole-scan exit code — enough for CI to fail the merge automatically,
-              with the evidence attached. The scan finishes with the same
-              guarantee it started with: <strong>zero package code was run</strong>.
+              A per-package severity (<em>CLEAN</em>, <em>WARN</em>, <em>BLOCK</em>) and a
+              whole-scan exit code (0/1/2/3), rendered in <strong>four formats</strong>:
+              TTY (colored, grouped), JSON (schema-stable), <strong>SARIF 2.1.0</strong>, and
+              Markdown. Drop-in as a <strong>GitHub Action</strong>
+              (<code>uses: OJ-Uday/vetlock/action@v0</code>) with SARIF uploaded to
+              code-scanning. The scan finishes with the same guarantee it started with:
+              <strong>zero package code was run</strong>.
             </p>
             <svg class="hiw__stage-svg hiw__gfx" viewBox="0 0 320 240" role="img" aria-label="Verdict summary — a large BLOCK pill in the center flagging @scoped/util 1.0.0 for install-script and env-token harvest, with per-package severity pills below showing CLEAN chalk, WARN axios, BLOCK util."><rect x="80" y="46" width="160" height="48" rx="24" class="g-pill--block"/><text x="160" y="76" text-anchor="middle" class="g-verdict-label t-on-block">BLOCK</text><text x="160" y="112" text-anchor="middle" class="n-callout">@scoped/util 1.0.0</text><text x="160" y="128" text-anchor="middle" class="n-label-sm">install-script + env-token harvest</text><rect x="34" y="150" width="80" height="20" rx="10" class="g-pill--clean"/><text x="74" y="163" text-anchor="middle" class="t-on-clean n-label-sm">CLEAN · chalk</text><rect x="120" y="150" width="80" height="20" rx="10" class="g-pill--warn"/><text x="160" y="163" text-anchor="middle" class="t-on-warn n-label-sm">WARN · axios</text><rect x="206" y="150" width="80" height="20" rx="10" class="g-pill--block"/><text x="246" y="163" text-anchor="middle" class="t-on-block n-label-sm">BLOCK · util</text><path d="M160 198 L160 214" class="g-edge--warn"/><path d="M155 210 L160 218 L165 210 Z" class="g-arrow--warn"/><text x="160" y="230" class="n-label-sm" text-anchor="middle">exit code · CI fails the merge</text></svg>
           </li>
 
         </ol>
+      </div>
+    </section>
+
+    <section id="vs-npm-audit" class="section container">
+      <h2><span class="mono h-idx">·</span> vs. npm audit &mdash; same corpus, different signal</h2>
+      <p class="lede">
+        The reference corpus is 13 real supply-chain attacks (Shai-Hulud, ua-parser-js,
+        node-ipc, event-stream, etc.). Both scanners run on the same before/after
+        lockfile pairs.
+      </p>
+      <div class="card">
+        <div class="card-body">
+          <ul class="proj-metrics">
+            <li>
+              <strong>vetlock</strong>
+              <span class="mono">92.3% &middot; 12 of 13 caught</span>
+            </li>
+            <li>
+              <strong>npm audit</strong>
+              <span class="mono">53.8% &middot; 7 of 13 caught</span>
+            </li>
+          </ul>
+          <p class="mono">
+            npm audit relies on advisory-database matching after CVE publication.
+            vetlock diffs the behavior of the packages themselves, so it catches
+            attacks that haven't been catalogued yet.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="fp-arc" class="section container">
+      <h2><span class="mono h-idx">·</span> False-positive tuning &mdash; 48.1% &rarr; 14.3% across four releases</h2>
+      <p class="lede">
+        On the top-100 npm version bumps (routine, benign changes), an over-sensitive
+        scanner is just as unusable as an under-sensitive one. Four point releases
+        dropped the BLOCK rate on routine bumps from 48.1% to 14.3% while holding
+        the corpus detection rate flat at 92.3%.
+      </p>
+      <div class="card">
+        <div class="card-body">
+          <ul class="proj-metrics">
+            <li><strong>v0.4.0</strong> <span class="mono">48.1% BLOCK</span></li>
+            <li><strong>v0.4.1</strong> <span class="mono">33.3% BLOCK</span></li>
+            <li><strong>v0.4.2</strong> <span class="mono">17.9% BLOCK</span></li>
+            <li><strong>v0.5.0</strong> <span class="mono">14.3% BLOCK</span></li>
+          </ul>
+          <p class="mono">
+            Corpus detection rate held at 92.3% (12/13) through the entire arc.
+            Method: install.script severity tiering (INSTALL_TIER=BLOCK,
+            PUBLISH_TIER=WARN, CI_TIER=INFO); URL AST context tags (network-arg vs
+            config-value vs literal vs comment); obfuscation de-weighting for
+            declared bundler entries.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="hosted-api" class="section container">
+      <h2><span class="mono h-idx">·</span> Hosted API &mdash; engine as a service</h2>
+      <p class="lede">
+        The same detection engine runs behind a small HTTP surface: three endpoints,
+        async job queue, per-scan subprocess sandbox with SIGKILL-on-timeout,
+        unconditional tmpdir teardown. Deployed on Fly.io scale-to-zero &mdash;
+        ~$0/mo idle, ~$5/mo at 1,000 scans/day.
+      </p>
+      <div class="card">
+        <div class="card-body">
+          <pre class="mono"><code>POST /scan               &rarr; 202 { scanId }
+GET  /scan/:scanId       &rarr; 202 pending | 200 done | 410 expired
+GET  /health             &rarr; 200 { status: "ok" }</code></pre>
+          <ul class="proj-metrics">
+            <li><strong>Sandbox</strong> <span class="mono">empty env &middot; no shell &middot; stdin closed &middot; 4 MB stdout cap &middot; --max-old-space-size=512 &middot; SIGKILL on wall-clock timeout &middot; unconditional tmpdir teardown</span></li>
+            <li><strong>Rate limit</strong> <span class="mono">5 req/min per IP &middot; 1 MB body cap &middot; 24h result TTL</span></li>
+            <li><strong>Zero new npm deps</strong> <span class="mono">a supply-chain scanner adding express as a runtime dep would be self-contradictory</span></li>
+          </ul>
+          <div class="chips">
+            <span>~$0/mo idle</span>
+            <span>~$5/mo at 1000 scans/day</span>
+            <span>24h TTL</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -527,11 +634,20 @@
   <script type="module">
     // Case-study boot: kick off reveal fade-in immediately; how-it-works
     // and proof are lazy-loaded via IntersectionObserver below.
+    // hero.js drives the site-wide animated canvas backdrop — .hero-bg
+    // now lives at body level on every page, so every route ships the
+    // same graph poster + canvas enhancement behind its content.
+    import initHero from '/design/hero.js';
     import initReveal from '/design/reveal.js';
+    const boot = () => {
+      const canvas = document.querySelector('[data-hero-canvas]');
+      if (canvas) initHero(canvas);
+      initReveal();
+    };
     if ('requestIdleCallback' in window) {
-      requestIdleCallback(() => initReveal(), { timeout: 500 });
+      requestIdleCallback(boot, { timeout: 500 });
     } else {
-      setTimeout(() => initReveal(), 0);
+      setTimeout(boot, 0);
     }
   </script>
   <!-- Lazy-load the live-metrics strip. Same pattern the home page used

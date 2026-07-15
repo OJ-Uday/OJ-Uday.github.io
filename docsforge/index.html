@@ -71,6 +71,7 @@
     h1{font-size:clamp(2.4rem,6.5vw,3.8rem);line-height:1.06;margin:10px 0 20px;letter-spacing:-.025em;font-weight:700}
     .lede{color:var(--muted);font-size:1.08rem;max-width:34em}
     @media (max-width:900px){.hero{grid-template-columns:1fr;min-height:0;gap:28px}}
+    .pipeline-diagram{display:block;width:100%;max-width:640px;height:auto;margin:var(--space-4) auto;background:var(--panel-2);border:1px solid var(--line);border-radius:var(--radius);padding:var(--space-3)}
   </style>
   <link rel="stylesheet" href="/style.css">
   <!--
@@ -84,9 +85,11 @@
     is off — matches our progressive-enhancement rule that content must
     be readable without JS.
   -->
+  <link rel="stylesheet" href="/design/how-it-works.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="/design/systems.css"      media="print" onload="this.media='all'">
   <link rel="stylesheet" href="/design/projects.css"     media="print" onload="this.media='all'">
   <noscript>
+    <link rel="stylesheet" href="/design/how-it-works.css">
     <link rel="stylesheet" href="/design/systems.css">
     <link rel="stylesheet" href="/design/projects.css">
   </noscript>
@@ -113,6 +116,11 @@
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
+
+  <div class="hero-bg site-bg" aria-hidden="true" data-hero-state="poster">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Hero decorative visualization — dependency graph watched by a sweep; one node flagged in danger red." class="hero-poster" style="color:var(--color-text-dim)"><defs><radialGradient id="s" cx="216" cy="302" r="770" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="var(--color-accent)" stop-opacity=".18"/><stop offset=".55" stop-color="var(--color-accent)" stop-opacity=".06"/><stop offset="1" stop-color="var(--color-accent)" stop-opacity="0"/></radialGradient></defs><rect width="1200" height="720" fill="url(#s)"/><path d="M216 302L256 238M216 302L307 368M840 455L920 402M840 455L838 532M360 703L388 643M360 703L262 628M526 618L623 587M526 618L471 549M1070 158L1055 102M1070 158L1168 178M475 380L496 301M475 380L346 429M179 193L152 133M179 193L256 238M945 156L925 228M1070 158L945 156M524 475L471 549M475 380L524 475M653 220L622 284M653 220L704 155M1080 23L1055 102M1080 23L962 71M258 38L348 33M258 38L315 128M1048 658L961 606M1048 658L920 664M82 45L152 133M258 38L82 45M479 186L408 132M653 220L479 186M1030 328L1010 259M1030 328L1147 289M920 664L961 606M216 302L33 312M33 312L69 196M346 429L307 368M819 106L816 32M819 106L704 155M653 354L622 284M653 354L496 301M816 32L962 71M812 239L925 228M653 220L812 239M152 133L69 196M838 532L816 603M179 193L69 196M388 643L262 628M92 550L180 519M92 550L112 483M496 301L622 284M712 602L623 587M712 602L816 603M315 128L408 132M1168 178L1055 102M871 353L920 402M1030 328L871 353M122 646L262 628M92 550L122 646M471 549L324 545M324 545L180 519M476 36L348 33M476 36L408 132M180 519L112 483M1012 455L920 402M1012 455L1114 397M962 71L1055 102M1048 658L1139 596M1139 596L961 606M925 228L1010 259M1147 289L1165 348M1165 348L1114 397M920 664L792 694M816 603L792 694" fill="none" stroke="var(--color-text-muted)" stroke-width="1" opacity=".35"/><circle cx="216" cy="302" r="770" fill="none" stroke="var(--color-accent)" stroke-width="1.5" opacity=".35"/><g fill="currentColor"><circle cx="840" cy="455" r="5"/><circle cx="360" cy="703" r="3"/><circle cx="526" cy="618" r="5"/><circle cx="1070" cy="158" r="3"/><circle cx="475" cy="380" r="3"/><circle cx="179" cy="193" r="5"/><circle cx="524" cy="475" r="7"/><circle cx="653" cy="220" r="3"/><circle cx="1080" cy="23" r="3"/><circle cx="258" cy="38" r="5"/><circle cx="1048" cy="658" r="3"/><circle cx="82" cy="45" r="3"/><circle cx="479" cy="186" r="5"/><circle cx="1030" cy="328" r="3"/><circle cx="920" cy="664" r="5"/><circle cx="33" cy="312" r="3"/><circle cx="471" cy="549" r="3"/><circle cx="346" cy="429" r="5"/><circle cx="819" cy="106" r="3"/><circle cx="653" cy="354" r="7"/><circle cx="256" cy="238" r="3"/><circle cx="816" cy="32" r="3"/><circle cx="812" cy="239" r="5"/><circle cx="152" cy="133" r="3"/><circle cx="838" cy="532" r="3"/><circle cx="69" cy="196" r="5"/><circle cx="388" cy="643" r="3"/><circle cx="92" cy="550" r="7"/><circle cx="496" cy="301" r="3"/><circle cx="712" cy="602" r="3"/><circle cx="315" cy="128" r="5"/><circle cx="1168" cy="178" r="3"/><circle cx="871" cy="353" r="3"/><circle cx="122" cy="646" r="5"/><circle cx="704" cy="155" r="3"/><circle cx="324" cy="545" r="5"/><circle cx="476" cy="36" r="3"/><circle cx="180" cy="519" r="3"/><circle cx="112" cy="483" r="5"/><circle cx="408" cy="132" r="3"/><circle cx="816" cy="603" r="7"/><circle cx="1012" cy="455" r="3"/><circle cx="962" cy="71" r="3"/><circle cx="307" cy="368" r="5"/><circle cx="348" cy="33" r="3"/><circle cx="1139" cy="596" r="3"/><circle cx="925" cy="228" r="5"/><circle cx="920" cy="402" r="3"/><circle cx="1147" cy="289" r="7"/><circle cx="1055" cy="102" r="3"/><circle cx="1165" cy="348" r="3"/><circle cx="623" cy="587" r="5"/><circle cx="1010" cy="259" r="3"/><circle cx="622" cy="284" r="7"/><circle cx="1114" cy="397" r="5"/><circle cx="262" cy="628" r="3"/><circle cx="792" cy="694" r="5"/><circle cx="961" cy="606" r="3"/></g><circle cx="216" cy="302" r="7" fill="var(--color-accent)"/><circle cx="945" cy="156" r="7" fill="var(--color-danger)"/></svg>
+    <canvas class="hero-canvas" aria-hidden="true" data-hero-canvas></canvas>
+  </div>
 
   <header class="nav">
     <a class="brand" href="/" data-evt="nav.brand"><span class="dot" aria-hidden="true"></span>uday.ojha</a>
@@ -142,37 +150,215 @@
     <section id="docsforge-intro" class="section container">
       <h1>docsforge</h1>
       <p class="lede">
-        Reusable GitHub Actions workflow. Discovers <code>.docmeta.yml</code> files in a caller
-        repo, dispatches each doc to the matching builder (LaTeX / node-docx / markdown-pandoc),
-        runs the whole matrix in parallel, and publishes outputs to a rolling <code>latest</code>
-        release. Consumer wiring is three lines of YAML.
+        One reusable GitHub Actions workflow (10.5 KB, one file) turns any repository into a
+        self-building documentation pipeline. Drop a <code>.docmeta.yml</code> next to a LaTeX,
+        Word-via-docx, or Markdown source, add three lines to a caller workflow, and every push
+        publishes fresh assets to a rolling <code>latest</code> GitHub Release whose download URLs
+        never change.
       </p>
+    </section>
+
+    <section id="docsforge-pipeline" class="section container">
+      <h2>How the pipeline works</h2>
+      <p>
+        <code>discover</code> walks the repo for every <code>.docmeta.yml</code>, <code>build</code>
+        fans them out in parallel (one runner per document, <code>fail-fast:false</code>),
+        <code>publish</code> collects the artifacts and updates the rolling release.
+      </p>
+      <svg class="pipeline-diagram hiw__gfx" viewBox="0 0 480 320" role="img" aria-label="Docsforge pipeline diagram. Top row: a consumer repository triggers on git push and holds a three-line caller workflow plus three .docmeta.yml files next to source documents. Middle row: the docsforge reusable workflow runs three sequential stages — discover walks the repo with find and yq, build fans out in a parallel matrix with three builder branches (latex via latex-action, node-docx via Node.js plus Python, and markdown-pandoc via pandoc and xelatex), and publish downloads every artifact and updates a GitHub Release. Bottom row: outputs are Actions artifacts with 30-day retention and a rolling GitHub Release tagged latest.">
+        <rect x="12" y="12" width="456" height="64" rx="6" class="g-node"/>
+        <text x="24" y="30" class="n-callout">consumer repo · git push</text>
+        <text x="24" y="46" class="n-label-sm">jobs.build.uses: OJ-Uday/docsforge/.github/workflows/build-docs.yml@main</text>
+        <rect x="180" y="52" width="86" height="18" rx="4" class="g-pill"/>
+        <text x="223" y="65" text-anchor="middle" class="n-label-sm">.docmeta.yml</text>
+        <rect x="274" y="52" width="86" height="18" rx="4" class="g-pill"/>
+        <text x="317" y="65" text-anchor="middle" class="n-label-sm">.docmeta.yml</text>
+        <rect x="368" y="52" width="86" height="18" rx="4" class="g-pill"/>
+        <text x="411" y="65" text-anchor="middle" class="n-label-sm">.docmeta.yml</text>
+
+        <!-- edge into docsforge -->
+        <path d="M240 76 L240 100" class="g-edge--flow"/>
+
+        <!-- Row 2: docsforge workflow -->
+        <rect x="12" y="100" width="456" height="140" rx="6" class="g-node"/>
+        <text x="24" y="118" class="n-callout">docsforge · reusable workflow (build-docs.yml)</text>
+
+        <!-- discover -->
+        <rect x="26" y="134" width="90" height="72" rx="4" class="g-node--emph"/>
+        <text x="71" y="156" text-anchor="middle">discover</text>
+        <text x="71" y="172" text-anchor="middle" class="n-label-sm">find + yq</text>
+        <text x="71" y="186" text-anchor="middle" class="n-label-sm">→ JSON matrix</text>
+        <text x="71" y="200" text-anchor="middle" class="n-label-sm">fail-open</text>
+
+        <path d="M116 170 L136 170" class="g-edge--flow"/>
+
+        <!-- build (matrix fan-out) -->
+        <rect x="136" y="134" width="204" height="72" rx="4" class="g-node--emph"/>
+        <text x="238" y="150" text-anchor="middle">build · matrix fan-out</text>
+        <rect x="144" y="158" width="62" height="18" rx="3" class="g-pill"/>
+        <text x="175" y="171" text-anchor="middle" class="n-label-sm">latex</text>
+        <rect x="209" y="158" width="62" height="18" rx="3" class="g-pill"/>
+        <text x="240" y="171" text-anchor="middle" class="n-label-sm">node-docx</text>
+        <rect x="274" y="158" width="62" height="18" rx="3" class="g-pill"/>
+        <text x="305" y="171" text-anchor="middle" class="n-label-sm">md-pandoc</text>
+        <text x="238" y="192" text-anchor="middle" class="n-label-sm">strategy.fail-fast:false · one runner per doc</text>
+
+        <path d="M340 170 L360 170" class="g-edge--flow"/>
+
+        <!-- publish -->
+        <rect x="360" y="134" width="94" height="72" rx="4" class="g-node--emph"/>
+        <text x="407" y="156" text-anchor="middle">publish</text>
+        <text x="407" y="172" text-anchor="middle" class="n-label-sm">merge artifacts</text>
+        <text x="407" y="186" text-anchor="middle" class="n-label-sm">step summary</text>
+        <text x="407" y="200" text-anchor="middle" class="n-label-sm">gh-release@v2</text>
+
+        <text x="240" y="226" text-anchor="middle" class="n-label-sm">concurrency: docsforge-${{ github.ref }} · cancel-in-progress</text>
+
+        <!-- edge to outputs -->
+        <path d="M240 240 L240 262" class="g-edge--flow"/>
+
+        <!-- Row 3: Outputs -->
+        <rect x="80" y="266" width="160" height="40" rx="4" class="g-pill"/>
+        <text x="160" y="283" text-anchor="middle" class="n-label-sm">Actions artifacts</text>
+        <text x="160" y="297" text-anchor="middle" class="n-label-sm">retention: 30d (default)</text>
+
+        <rect x="252" y="266" width="160" height="40" rx="4" class="g-pill--clean"/>
+        <text x="332" y="283" text-anchor="middle" class="t-on-clean n-label-sm">GitHub Release</text>
+        <text x="332" y="297" text-anchor="middle" class="n-label-sm">tag: latest · make_latest:true</text>
+      </svg>
     </section>
 
     <section id="docsforge-details" class="section container">
       <h2>Design choices</h2>
       <ul>
-        <li>Fail-open discovery — malformed <code>.docmeta.yml</code> warns; other docs keep building.</li>
-        <li>Lockfile-survivor mode — node-docx auto-heals <code>package-lock.json</code> files that point at private registries the runner can't reach.</li>
-        <li>Parallel matrix — N docs → N concurrent legs, fail-fast off.</li>
-        <li>Concurrency-cancel — newer pushes preempt in-flight runs.</li>
+        <li>
+          <strong>Fail-open discovery.</strong> Malformed <code>.docmeta.yml</code> (missing
+          <code>type</code> or <code>entry</code>) emits a <code>::warning file=…::</code>
+          annotation and is skipped. The rest of the matrix still ships.
+        </li>
+        <li>
+          <strong>Registry-safety guard on node-docx.</strong> Strips
+          <code>NPM_TOKEN</code> / <code>NODE_AUTH_TOKEN</code>, forces
+          <code>NPM_CONFIG_REGISTRY</code> to the public registry, greps the lockfile for
+          <code>jfrog</code> / <code>artifactory</code> / <code>nexus</code> /
+          <code>verdaccio</code>. If a private registry is detected, the lockfile is removed and
+          <code>npm install --no-audit --no-fund</code> is used instead of <code>npm ci</code>.
+        </li>
+        <li>
+          <strong>Parallel matrix.</strong> <code>strategy.fail-fast:false</code>. N docs → N
+          concurrent runners. One broken document doesn't block the release for the others.
+        </li>
+        <li>
+          <strong>Concurrency-cancel.</strong> concurrency group
+          <code>docsforge-${{ github.ref }}</code> with <code>cancel-in-progress:true</code>. A
+          fresh push kills the older run for the same branch — pushing twice never doubles the
+          release.
+        </li>
       </ul>
+    </section>
 
+    <section id="docmeta-schema" class="section container">
+      <h2><code>.docmeta.yml</code> — schema</h2>
+      <p>One YAML file sits next to each source document. Four fields, two required.</p>
+      <table class="mono">
+        <thead>
+          <tr>
+            <th align="left">Field</th>
+            <th align="left">Required</th>
+            <th align="left">Type</th>
+            <th align="left">Default</th>
+            <th align="left">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>type</code></td>
+            <td>yes</td>
+            <td>enum</td>
+            <td>—</td>
+            <td>One of <code>latex</code>, <code>node-docx</code>, <code>markdown-pandoc</code>.</td>
+          </tr>
+          <tr>
+            <td><code>entry</code></td>
+            <td>yes</td>
+            <td>string</td>
+            <td>—</td>
+            <td>Path to the source file, relative to the <code>.docmeta.yml</code>.</td>
+          </tr>
+          <tr>
+            <td><code>output_name</code></td>
+            <td>no</td>
+            <td>string</td>
+            <td>parent folder name</td>
+            <td>Base filename on the release (no extension).</td>
+          </tr>
+          <tr>
+            <td><code>needs_bibtex</code></td>
+            <td>no</td>
+            <td>bool</td>
+            <td><code>false</code></td>
+            <td>LaTeX only — runs <code>bibtex</code> between compile passes.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="docsforge-wiring" class="section container">
       <h2>Consumer wiring</h2>
+      <p class="mono dim">Caller workflow</p>
       <pre><code class="lang-yaml">jobs:
   build:
     uses: OJ-Uday/docsforge/.github/workflows/build-docs.yml@main</code></pre>
-      <p>
-        Full architecture, <code>.docmeta.yml</code> schema, and a Mermaid diagram live in the
-        <a href="https://github.com/OJ-Uday/docsforge" data-evt="docsforge.readme">docsforge README</a>.
-      </p>
+      <p class="mono dim">Per-document metadata</p>
+      <pre><code class="lang-yaml"># thesis/.docmeta.yml
+type: latex
+entry: main.tex
+output_name: Uday_Ojha_Thesis
+needs_bibtex: true</code></pre>
+    </section>
+
+    <section id="workflow-inputs" class="section container">
+      <h2>Workflow inputs</h2>
+      <p>Four optional inputs on the reusable workflow. Reasonable defaults; overridable per consumer.</p>
+      <table class="mono">
+        <thead>
+          <tr>
+            <th align="left">Input</th>
+            <th align="left">Default</th>
+            <th align="left">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>release_tag</code></td>
+            <td><code>latest</code></td>
+            <td>Tag the rolling release attaches to. Change to publish under a different name.</td>
+          </tr>
+          <tr>
+            <td><code>release_name</code></td>
+            <td><code>Latest build</code></td>
+            <td>Human-readable release title.</td>
+          </tr>
+          <tr>
+            <td><code>commit_previews</code></td>
+            <td><code>true</code></td>
+            <td>Whether to also publish preview builds per-commit alongside the rolling release.</td>
+          </tr>
+          <tr>
+            <td><code>artifact_retention_days</code></td>
+            <td><code>30</code></td>
+            <td>How long per-doc Actions artifacts stay attached to the run.</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <section id="docsforge-links" class="section container">
       <h2>Repos</h2>
       <div class="chips">
         <a href="https://github.com/OJ-Uday/docsforge" data-evt="docsforge.repo"><span>docsforge repo ↗</span></a>
-        <span>uday-docs (private)</span>
+        <span>uday-docs — private consumer · thesis + presentation + résumé</span>
+        <a href="https://github.com/OJ-Uday/docsforge/blob/main/.github/workflows/build-docs.yml" data-evt="docsforge.workflow"><span>build-docs.yml source ↗</span></a>
       </div>
     </section>
   </main>
@@ -187,8 +373,16 @@
 
   <script type="module">import init from '/design/theme.js'; init();</script>
   <script type="module">
+    import initHero from '/design/hero.js';
     import initReveal from '/design/reveal.js';
-    const boot = () => initReveal();
+    // hero.js drives the site-wide animated canvas backdrop — .hero-bg
+    // lives at body level on every page, so every route ships the same
+    // graph poster + canvas enhancement.
+    const boot = () => {
+      const canvas = document.querySelector('[data-hero-canvas]');
+      if (canvas) initHero(canvas);
+      initReveal();
+    };
     if ('requestIdleCallback' in window) requestIdleCallback(boot, { timeout: 500 });
     else setTimeout(boot, 0);
   </script>

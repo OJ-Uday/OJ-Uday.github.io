@@ -1,25 +1,24 @@
 /* =====================================================================
- * design/hero.css — scoped stylesheet for the P2 hero scene.
- * See docs/adrs/0003-hero-tech.md and the P2 hero spec.
+ * design/hero.css — scoped stylesheet for the P2 hero scene, now
+ * repurposed as the SITE-WIDE background layer.
  *
  * WHY THIS FILE EXISTS
- *   The hero introduces three new structural pieces the existing
- *   style.css never anticipated:
+ *   Originally .hero-bg was an absolutely-positioned layer scoped to
+ *   the .hero grid track on index.html. It has since been promoted to a
+ *   fixed, full-viewport backdrop that lives at BODY level on every page
+ *   (index, vetlock, docsforge, telemetry-sdk-patterns), so the same
+ *   dependency-graph poster + animated canvas sit behind every route.
+ *   The panels / cards / hero copy stay opaque and the graph reads
+ *   through the gaps between them.
  *
- *     • .hero-bg      — an absolutely-positioned background layer that
- *                       stacks a static poster SVG under an animated
- *                       canvas, both filling the hero grid track.
+ *     • .hero-bg      — a fixed-position background layer that stacks a
+ *                       static poster SVG under an animated canvas, both
+ *                       filling the viewport.
  *     • .hero-poster  — the always-present static SVG (the LCP element
  *                       per ADR 0003; ships whether or not JS runs).
  *     • .hero-canvas  — the enhancement layer that fades in once
  *                       hero.js has committed to running the scene, and
  *                       fades back out if the runtime watchdog trips.
- *
- *   Rather than balloon style.css with hero-specific plumbing, this
- *   delta lives in its own file, loaded AFTER primitives.css and
- *   BEFORE style.css. Load order matters: primitives.css owns tokens +
- *   generic utilities; hero.css owns hero-only structural rules;
- *   style.css comes last so it can still override during migration.
  *
  * TOKEN DISCIPLINE
  *   Every value on the right of a colon resolves through var(--*). No
@@ -30,12 +29,9 @@
  * STATE MODEL
  *   Baseline (no JS, no state attribute): poster visible, canvas hidden.
  *   Once hero.js has passed every F.1–F.3 check AND painted its first
- *   frame, it flips the hero into the "running" state. That flip is
- *   expressed TWO ways so whichever the runtime uses lights up:
- *
- *     • data-hero-state="running" on .hero-bg (or .hero)
+ *   frame, it flips the hero into the "running" state via either
+ *     • data-hero-state="running" on .hero-bg
  *     • .is-canvas-ready class on .hero-bg
- *
  *   In "running" the canvas fades up and the poster fades to zero
  *   opacity while remaining in the layout — LCP-captured paint stays
  *   stable, and a mid-run degradation can restore the poster instantly.
@@ -43,27 +39,15 @@
 
 
 /* =====================================================================
- * 1) HERO CONTAINER — establish a positioned stacking context.
+ * 1) HERO COPY / CONSOLE STACKING
  * ---------------------------------------------------------------------
- * .hero already has its grid geometry in style.css (1.05fr 0.95fr, 40px
- * gap, 78vh min-height) and is re-consumed by the ≤900px collapse rule.
- * We do NOT touch the base `.hero` selector — that contract belongs to
- * style.css. Instead we scope the two stacking-context properties to
- * the P2 variant only: `.hero:has(> .hero-bg)` matches when (and only
- * when) the hero includes the background layer this stylesheet owns.
- * position:relative anchors the absolute .hero-bg, and isolation:isolate
- * creates a local stacking context so hero z-indexes don't fight the
- * nav's. Any future consumer of the plain `.hero` (or the mobile
- * collapse) still sees a bare grid container — no unexpected stacking
- * context, no isolate boundary trapping absolute overlays.
+ * .hero-bg is now body-level and fixed to the viewport (see §2). It sits
+ * at z-index: -1 so ordinary flow content stacks above it by default —
+ * no positioning gymnastics required on cards, main, footer, etc.
+ * The .hero-copy / .hero > .console rules from the pre-move geometry
+ * remain harmless: they still promote those children into their own
+ * stacking layer above whatever body content sits behind.
  * ===================================================================== */
-.hero:has(> .hero-bg) {
-  position: relative;
-  isolation: isolate;
-}
-
-/* Copy column and console panel sit on top of the background layer.
-   z-index: 1 is enough — .hero-bg is at z-index: 0. */
 .hero > .hero-copy,
 .hero > .console {
   position: relative;
@@ -72,34 +56,23 @@
 
 
 /* =====================================================================
- * 2) HERO BACKGROUND LAYER — absolute, fills the hero.
+ * 2) HERO BACKGROUND LAYER — fixed, full viewport.
  * ---------------------------------------------------------------------
- * .hero-bg wraps the poster SVG and the canvas. It fills the hero grid
- * track via inset: 0, and sits at z-index: 0 behind the copy.
- * pointer-events: none lets clicks pass through to CTAs in the copy —
- * the hero is decorative, not interactive at the DOM level. hero.js
- * listens on document/window for pointermove so the scene still reacts
- * to the cursor. overflow: hidden clips sweep-ring overshoot at edges.
+ * .hero-bg wraps the poster SVG and the canvas. It's a fixed layer
+ * pinned to the viewport so the same graph shows behind every page as
+ * the user scrolls, and the LCP paint stays anchored regardless of
+ * where the section is placed in the document.
+ * pointer-events: none lets clicks pass through to whatever content
+ * sits above. hero.js listens on document/window for pointermove so
+ * the scene still reacts to the cursor. overflow: hidden clips
+ * sweep-ring overshoot at edges.
  * ===================================================================== */
 .hero-bg {
-  position: absolute;
-  /* Break out of main's max-width + padding so the watcher graph bleeds
-     edge-to-edge on wide viewports. Without this, .hero sits inside
-     main's 1120px container and the watcher renders as a visible black
-     rectangle instead of the intended full-bleed backdrop.
-     Uses the "50% margin trick" so no horizontal scrollbar is triggered:
-     width equals the viewport, and negative margin pulls left by
-     (viewport - container)/2 so the layer starts at the left viewport
-     edge. Falls back gracefully at narrow widths where the container
-     already spans the viewport. */
-  left: 50%;
-  right: auto;
-  top: 0;
-  bottom: 0;
-  width: 100vw;
-  max-width: 100vw;
-  margin-left: -50vw;
-  z-index: 0;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
   pointer-events: none;
   overflow: hidden;
 }
@@ -175,89 +148,71 @@
 
 
 /* =====================================================================
- * 6) MOBILE
+ * 6) SITE-WIDE SCRIM
  * ---------------------------------------------------------------------
- * The hero grid collapses to a single column at ≤ 900px (handled in
- * style.css). The background still fills the hero, spanning the full
- * width instead of the left grid track — no change needed here. If perf
- * on very old mobile becomes a problem, the one-line escape hatch
- * documented in the spec §I.2 lives in style.css, NOT here (this file
- * is scoped to hero geometry).
+ * With .hero-bg now covering the full viewport across every page, the
+ * old left-to-right scrim (which faded the LEFT 38% down to --color-bg
+ * to protect the hero copy column) no longer maps to anything
+ * meaningful. Replace it with two composited layers:
+ *
+ *   • ::before — a subtle page-wide veil in --color-bg at ~35% opacity.
+ *     Establishes a floor of legibility for text that sits above the
+ *     graph without hiding the texture entirely; the graph still reads
+ *     through in the gaps between cards / sections / footer.
+ *
+ *   • ::after — a radial dim centered near the top-left (30% 20%) that
+ *     fades from --color-bg 82% at center to transparent at ~45% radius.
+ *     Dims the poster around the top-of-page zone where the nav + hero
+ *     copy live, so the H1/lede/CTAs stay high-contrast without needing
+ *     a solid backdrop on the hero copy column.
+ *
+ * Stacking: .hero-bg lives at z-index: -1 relative to body. Its ::before
+ * / ::after both use position: absolute; inset: 0 so they compose over
+ * the poster + canvas siblings but stay contained in the fixed layer.
  * ===================================================================== */
+.hero-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--color-bg) 35%, transparent);
+  z-index: 0;
+}
 
-
-/* =====================================================================
- * 7) COPY SCRIM — poster texture yields to the copy column.
- * ---------------------------------------------------------------------
- * The poster SVG paints a graph of ~60 dots (currentColor resolves to
- * --color-text-dim) plus a line network (--color-text-muted) across the
- * entire hero-bg. In dark mode --color-text-dim (slate-500) and
- * --color-text-muted (slate-350) share the same mid-gray tonal family
- * as the lede paragraph's color (--muted → slate-350). Where a dot
- * happens to fall behind a lede glyph the letterform mottles — a
- * legibility regression relative to the pre-P2 hero, which had no
- * background layer at all.
- *
- * The scrim below is an absolutely-positioned ::after inside .hero-bg
- * that fades the poster (and, while running, the canvas) down to
- * --color-bg under the LEFT half of the hero — exactly where the copy
- * column sits. The right half stays transparent because the console
- * panel there is already opaque (`background: var(--panel)` in
- * style.css), so no poster texture leaks through to the console.
- *
- * --color-bg is theme-aware, so the scrim fades to whichever base color
- * the active theme paints, adapting to dark and light without extra
- * media queries. At ≤ 900px the hero collapses to a single column and
- * copy stacks above the console, so the scrim rotates 90° to fade from
- * the top of the hero downward — same protection, different axis.
- *
- * The scrim's opaque stops are NOT fully solid --color-bg. In dark mode
- * style.css paints a subtle body-level radial glow behind the hero
- * (--accent-dim wash from `body { background: radial-gradient(...) }`),
- * which was part of the pre-P2 aesthetic behind the H1/lede/CTAs. A
- * fully-opaque scrim over the copy column would obliterate that glow —
- * a load-bearing visual regression. Instead we mix --color-bg with
- * `transparent` at 78% so the scrim is dense enough to still quiet the
- * poster texture under copy (the poster's dots use --color-text-dim, so
- * ~22% pass-through leaves them well below the AA-normal foreground the
- * lede paints in), while the body radial glow reads through at the
- * outer edge exactly as it did pre-P2. Same mix pattern is already used
- * for the nav backdrop in style.css and primitives.css.
- *
- * Stacking: .hero-bg has `position: absolute; z-index: 0` so it forms
- * its own stacking context. The ::after (z-index: 1) sits above the
- * poster + canvas siblings but stays contained inside .hero-bg. In the
- * parent .hero stacking context .hero-copy is at z-index: 1 and remains
- * above the whole .hero-bg subtree — no additional stacking work needed.
- * ===================================================================== */
 .hero-bg::after {
   content: "";
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(
-    to right,
-    color-mix(in srgb, var(--color-bg) 78%, transparent) 0%,
-    color-mix(in srgb, var(--color-bg) 78%, transparent) 38%,
-    transparent 62%
-  );
+  background:
+    radial-gradient(
+      ellipse 60% 40% at 30% 20%,
+      color-mix(in srgb, var(--color-bg) 82%, transparent) 0%,
+      color-mix(in srgb, var(--color-bg) 40%, transparent) 60%,
+      transparent 100%
+    );
   z-index: 1;
 }
 
 @media (max-width: 900px) {
+  /* Mobile: text sits in a narrower single column and hugs the top of
+     the viewport, so dim more aggressively and center the radial higher
+     (30% 15%). Wider veil radius (50%) so the whole H1/lede band stays
+     legible without hiding the graph entirely lower down. */
   .hero-bg::after {
-    background: linear-gradient(
-      to bottom,
-      color-mix(in srgb, var(--color-bg) 78%, transparent) 0%,
-      color-mix(in srgb, var(--color-bg) 78%, transparent) 32%,
-      transparent 62%
-    );
+    background:
+      radial-gradient(
+        ellipse 70% 45% at 30% 15%,
+        color-mix(in srgb, var(--color-bg) 85%, transparent) 0%,
+        color-mix(in srgb, var(--color-bg) 60%, transparent) 50%,
+        transparent 100%
+      );
   }
 }
 
 
 /* =====================================================================
- * 8) .sr-only — screen-reader-only text primitive.
+ * 7) .sr-only — screen-reader-only text primitive.
  * ---------------------------------------------------------------------
  * primitives.css ships .visually-hidden with the same effect, but the
  * hero spec §G.2 explicitly names .sr-only for the accessibility

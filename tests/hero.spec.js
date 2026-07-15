@@ -266,21 +266,25 @@ test('hero renders canvas on capable hardware with no reduced-motion', async ({ 
   const frames2 = await page.evaluate(() => (/** @type {any} */(window)).__hero?.frames ?? 0);
   expect(frames2).toBeGreaterThan(frames1);
 
-  // Pixel-diversity probe. Sample a strip across the canvas and count unique
-  // RGB values; a still-clear canvas would report 1. We expect > 1 because
-  // edges + nodes have been drawn.
+  // Pixel-diversity probe. Sample pixels across several horizontal strips
+  // in the canvas and count unique RGB values; a still-clear canvas would
+  // report 1. We sample multiple heights (30%, 50%, 70%) because the graph
+  // nodes are not uniformly distributed — a single midline can hit a sparse
+  // band on some viewport sizes. We expect > 1 across the pooled sample
+  // because edges + nodes have been drawn somewhere.
   const uniqueColors = await page.evaluate(() => {
     const c = /** @type {HTMLCanvasElement | null} */(document.querySelector('.hero-canvas'));
     if (!c) return 0;
     const g = c.getContext('2d');
     if (!g) return 0;
-    // Sample 200 evenly-spaced pixels along a horizontal midline.
-    const y = Math.floor(c.height / 2);
     const step = Math.max(1, Math.floor(c.width / 200));
     const seen = new Set();
-    for (let x = 0; x < c.width; x += step) {
-      const p = g.getImageData(x, y, 1, 1).data;
-      seen.add(`${p[0]},${p[1]},${p[2]}`);
+    for (const frac of [0.3, 0.5, 0.7]) {
+      const y = Math.floor(c.height * frac);
+      for (let x = 0; x < c.width; x += step) {
+        const p = g.getImageData(x, y, 1, 1).data;
+        seen.add(`${p[0]},${p[1]},${p[2]}`);
+      }
     }
     return seen.size;
   });
