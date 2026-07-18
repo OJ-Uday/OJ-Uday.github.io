@@ -179,8 +179,8 @@
         Try vetlock on one of two bundled fixtures — the real
         <em>Shai-Hulud</em> hijack, or a benign <code>debug@4.3.4 → 4.3.5</code> bump —
         with <em>Try malicious</em> / <em>Try benign</em> below. Scanning your own
-        lockfile stays off by default: live-npm scanning of arbitrary lockfiles is
-        gated behind a future vetlock release + this site's startup packet.
+        lockfile stays off by default: this public page only submits the bundled
+        fixtures to the hosted relay, never a visitor's package file.
         <a href="#how-it-works" data-evt="vetlock.how">How it works ↓</a>
       </p>
 
@@ -214,6 +214,11 @@
       </noscript>
 
       <div class="scan-wrap">
+        <div id="scan-service-status" class="scan-service-status mono" role="status" aria-live="polite" data-state="checking">
+          <span class="scan-service-dot" aria-hidden="true"></span>
+          <span id="scan-service-message">Checking the hosted fixture relay…</span>
+          <a id="scan-service-link" href="https://vetlock-scan.oj-uday.workers.dev/health" target="_blank" rel="noopener">status</a>
+        </div>
         <!-- P3 a11y: off-screen polite live region for clipboard/share announcements.
              wireCopyBtn, copyShareLink, and copyCli all mutate a button's textContent
              to "Copied" on success, but a name change on the activated button is not
@@ -347,7 +352,7 @@
                to tap twice on mobile, so #sr-body is written to directly. -->
           <div class="sr-body" id="sr-body"></div>
           <div class="sr-foot mono">
-            Runs <a href="https://github.com/OJ-Uday/vetlock/releases/tag/v0.3.0" data-evt="scan.version">vetlock v0.3.0</a>
+            Runs the current <a href="https://github.com/OJ-Uday/vetlock/releases/latest" data-evt="scan.version">vetlock release</a>
             on <a href="https://github.com/OJ-Uday/vetlock-web-scans" data-evt="scan.workflow">GitHub Actions</a>.
             For a full offline scan, see <a href="https://github.com/OJ-Uday/vetlock#readme" data-evt="scan.readme">the vetlock repo README</a>.
           </div>

@@ -226,6 +226,9 @@
     readOnly: false,             // permalink bootstrap sets true
     lastScanEndedAt: 0,          // client-side 5s cooldown throttle
     cooldownTimer: 0,
+    // The public page only dispatches bundled fixtures. Keep the relay's
+    // availability separate from the deliberately disabled raw-lockfile path.
+    serviceState: "checking", // "checking" | "available" | "unavailable"
     // Injected DOM elements (populated by injectScanModeUI once at boot)
     dzSingle: null,
     tabProfile: null,
@@ -292,6 +295,8 @@
   const spMsg = $("sp-msg");
   const resultEl = $("scan-result");
   const errorEl = $("scan-error");
+  const serviceStatusEl = $("scan-service-status");
+  const serviceMessageEl = $("scan-service-message");
 
   // P3: inject tab UI + profile-mode dropzone + read-only banner into the
   // existing scanner shell. We can't edit index.html here, so we add the DOM
@@ -657,7 +662,8 @@
     // because loadCorpusExample sets state.corpusId, which flips this back on.
     const corpusOnly = typeof isLiveEnabled === "function" ? !isLiveEnabled() : false;
     const blockedByCorpusOnly = corpusOnly && !state.corpusId;
-    if (runBtn) runBtn.disabled = !ready || state.scanning || cooldownActive() || state.readOnly || blockedByCorpusOnly;
+    const blockedByService = state.serviceState === "unavailable";
+    if (runBtn) runBtn.disabled = !ready || state.scanning || cooldownActive() || state.readOnly || blockedByCorpusOnly || blockedByService;
     if (clearBtn) clearBtn.hidden = !(state.files.before || state.files.after || state.files.single);
   }
 
@@ -842,6 +848,11 @@
   }
 
   async function dispatchScan() {
+    if (state.serviceState === "unavailable") {
+      throw new Error(
+        "The hosted fixture relay is unavailable. No lockfile was sent. Check the status link above or use the Vetlock repository for local-run instructions."
+      );
+    }
     // Payload branches on mode. The Worker validates + rejects unsupported
     // combos (e.g. PyPI profile until vetlock 0.4). Corpus mode is unchanged.
     // P3 guardrail (last chance): if live-npm scanning isn't enabled on this
@@ -892,9 +903,10 @@
         signal: state.aborter.signal,
       });
     } catch (err) {
-      // Network / DNS / CORS failure — very likely the Worker isn't deployed yet.
+      // Network / DNS / CORS failure. The status probe above gives the visitor
+      // a stable explanation without pretending this is an app.vetlock.dev issue.
       throw new Error(
-        "The scan backend isn't reachable from this browser. This usually means the Cloudflare Worker hasn't been deployed yet — see the setup docs at github.com/OJ-Uday/vetlock-web-scans. In the meantime, you can run vetlock locally: `npx vetlock diff before.json after.json`."
+        "The hosted fixture relay is not reachable from this browser. No lockfile was sent. Check the status link above or use the Vetlock repository for local-run instructions."
       );
     }
     if (res.status === 429) {
@@ -1599,7 +1611,60 @@
     if (state.panelProfile) state.panelProfile.hidden = true;
     if (state.panelDiff)    state.panelDiff.hidden    = true;
   }
+
+  function setServiceState(next, detail = "") {
+    state.serviceState = next;
+    if (serviceStatusEl) serviceStatusEl.dataset.state = next;
+    if (serviceMessageEl) {
+      if (next === "available") {
+        serviceMessageEl.textContent = detail
+          ? `Hosted fixture relay online · ${detail}`
+          : "Hosted fixture relay online · bundled demos are ready.";
+      } else if (next === "unavailable") {
+        serviceMessageEl.textContent = "Hosted fixture relay unavailable · fixture controls are disabled; no lockfile was sent.";
+      } else {
+        serviceMessageEl.textContent = "Checking the hosted fixture relay…";
+      }
+    }
+    const blocked = next === "unavailable";
+    if (exBtn) exBtn.disabled = blocked;
+    if (exBenignBtn) exBenignBtn.disabled = blocked;
+    updateRunEnabled();
+  }
+
+  async function checkHostedFixtureRelay() {
+    // Health is a read-only request. It validates the exact Worker this page
+    // uses without dispatching a scan or reading any visitor-provided file.
+    // Local previews and Playwright runs use mocked scan routes, so do not make
+    // their correctness depend on public-network availability.
+    if (["localhost", "127.0.0.1", "::1"].includes(location.hostname)) {
+      setServiceState("available", "local preview");
+      return;
+    }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4_000);
+    try {
+      const response = await fetch(`${SCAN_ENDPOINT}/health`, {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      });
+      const payload = response.ok ? await response.json() : null;
+      if (!payload?.ok || payload.service !== "vetlock-scan-worker") throw new Error("unexpected health response");
+      const version = Number.isFinite(payload.version) ? `worker v${payload.version}` : "ready";
+      setServiceState("available", version);
+      emit("scan.service", "available");
+    } catch {
+      setServiceState("unavailable");
+      emit("scan.service", "unavailable");
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
   applyLiveGate();
+
+  // Do not await this: the scanner remains responsive while the non-invasive
+  // health probe completes, and fixture dispatch still checks the final state.
+  checkHostedFixtureRelay();
 
   // Initial state — everything hidden, no files, no zombies.
   hardResetScanner();

@@ -853,6 +853,36 @@ details.sr-group > summary:focus-visible {
 }
 .scan-wrap > * { position: relative; }
 
+/* Hosted demo status. This deliberately reports only relay availability; it
+   never claims that arbitrary visitor lockfiles can be scanned from the site. */
+.scan-service-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 9px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text-muted);
+  font-size: .78rem;
+  line-height: 1.45;
+}
+.scan-service-status a { margin-left: auto; color: inherit; }
+.scan-service-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--color-text-dim);
+}
+.scan-service-status[data-state="available"] .scan-service-dot { background: var(--color-accent); }
+.scan-service-status[data-state="unavailable"] { border-color: color-mix(in srgb, var(--color-danger) 45%, var(--color-border)); }
+.scan-service-status[data-state="unavailable"] .scan-service-dot { background: var(--color-danger); }
+@media (max-width: 480px) {
+  .scan-service-status { align-items: flex-start; }
+  .scan-service-status a { margin-left: 0; }
+}
+
 .scan-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
 
 .dropzone {
